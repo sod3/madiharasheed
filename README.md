@@ -1,4 +1,4 @@
-# The Writing Room
+# Madiha Rasheed
 
 An editorial portfolio and learning site using the Next.js App Router model, React, TypeScript, and Vinext on Cloudflare Workers. D1 stores content, enrollment records, inquiries, subscriptions, and analytics. R2 stores uploads. The portfolio uses a working title and clearly labeled sample courses and reflections until the client provides their information.
 

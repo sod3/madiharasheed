@@ -5,7 +5,7 @@ export const courseFormats=["Live online","Self-paced","In-person workshop","On-
 export const courseStates=["Upcoming","Ongoing","Self-paced","Registration closed","Coming soon"];
 export const inquiryTypes=["Course registration","Speaking invitation","Professional collaboration","Writing opportunity","Media and interviews","General inquiry"];
 export const defaults={
-  site_title:"The Writing Room",author_name:"",hero_label:"Writer · Educator · Lifelong Learner",
+  site_title:"Madiha Rasheed",author_name:"",hero_label:"Writer · Educator · Lifelong Learner",
   hero_line_1:"Words that inspire.",hero_line_2:"Knowledge that empowers.",hero_line_3:"Experiences that transform.",
   hero_description:"A space for meaningful reflections, transformative learning, and ideas shaped by a journey of professional excellence, curiosity, and purpose.",
   hero_image:"",hero_alt:"",intro_title:"The work behind the words",intro_body:"",intro_quote:"",about_image:"",about_image_alt:"",

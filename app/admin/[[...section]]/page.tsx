@@ -12,7 +12,7 @@ import {AdminAction,AdminLogin,AdminSignOut,Editor} from "@/components/editor";
 import "./admin.css";
 
 export const dynamic="force-dynamic";
-export const metadata:Metadata={title:"Website editor | The Writing Room",robots:{index:false,follow:false}};
+export const metadata:Metadata={title:"Website editor | Madiha Rasheed",robots:{index:false,follow:false}};
 
 function state(row:Row){
   if(row.status)return row.status;

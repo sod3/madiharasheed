@@ -169,7 +169,7 @@ export async function subscriberAction(mode: Mode, code: string) {
     await sync(id);
     await send(
       confirmed,
-      "Welcome to The Writing Room",
+      "Welcome to Madiha Rasheed",
       "You’re subscribed. Thank you for joining.\n\nUnsubscribe at any time:\n" + (await link(confirmed, "unsubscribe")),
       "welcome/" + id + "/" + confirmed.token_salt,
     );
