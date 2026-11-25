@@ -1,7 +1,8 @@
 import type {Metadata} from "next";
-import {notFound} from "next/navigation";
+import {notFound,unstable_rethrow} from "next/navigation";
+import {databaseConfigured} from "@/db";
 import {absolute,item,origin,settings,type Catalogue} from "@/lib/content";
-import {images,href,q,text,type Query} from "@/lib/domain";
+import {defaults,images,href,q,text,type Query} from "@/lib/domain";
 import {admin} from "@/lib/security";
 import {Footer} from "@/components/editorial";
 import {Header,Metrics} from "@/components/interactions";
@@ -39,20 +40,43 @@ async function resolve(props:Props){
   return {page,slug,row,query,site,preview};
 }
 export async function generateMetadata(props:Props):Promise<Metadata>{
-  const {page,slug,row,site,preview,query}=await resolve(props);
-  const [label,summary]=descriptions[page];
-  const name=row?text(row,"seo_title")||text(row,"title"):label;
-  const title=site.site_title+(name?" | "+name:" | Writing, learning & reflections");
-  const description=row?text(row,"seo_description")||text(row,"summary")||summary:summary;
-  const url=absolute("/"+page+(slug?"/"+slug:""));
-  const image=absolute(href(row?.image)||href(site.hero_image)||images.hero);
-  const index=!row?.demo&&!preview&&!q(query,"invite")&&page!=="newsletter"&&process.env.PRIVATE_PREVIEW!=="1";
-  return {title,description,metadataBase:new URL(origin()),alternates:{canonical:url},robots:{index,follow:index},
-    openGraph:{type:page==="reflections"&&row?"article":"website",title,description,url,siteName:site.site_title,images:[image]},
-    twitter:{card:"summary_large_image",title,description,images:[image]}};
+  try {
+    const {page,slug,row,site,preview,query}=await resolve(props);
+    const [label,summary]=descriptions[page];
+    const name=row?text(row,"seo_title")||text(row,"title"):label;
+    const title=site.site_title+(name?" | "+name:" | Writing, learning & reflections");
+    const description=row?text(row,"seo_description")||text(row,"summary")||summary:summary;
+    const url=absolute("/"+page+(slug?"/"+slug:""));
+    const image=absolute(href(row?.image)||href(site.hero_image)||images.hero);
+    const index=!row?.demo&&!preview&&!q(query,"invite")&&page!=="newsletter"&&process.env.PRIVATE_PREVIEW!=="1";
+    return {title,description,metadataBase:new URL(origin()),alternates:{canonical:url},robots:{index,follow:index},
+      openGraph:{type:page==="reflections"&&row?"article":"website",title,description,url,siteName:site.site_title,images:[image]},
+      twitter:{card:"summary_large_image",title,description,images:[image]}};
+  } catch (err) {
+    unstable_rethrow(err);
+    return {title:defaults.site_title};
+  }
 }
 export default async function Page(props:Props){
-  const {page,row,query,site,preview}=await resolve(props);
+  let resolved: Awaited<ReturnType<typeof resolve>>;
+  try {
+    resolved = await resolve(props);
+  } catch (err) {
+    unstable_rethrow(err);
+    const message = err instanceof Error ? err.message : "";
+    const missingConfig = !databaseConfigured() && process.env.VERCEL === "1";
+    const missingSchema = /no such table/i.test(message);
+    return <main id="main" className="reading section stack">
+      <h1>Database setup required</h1>
+      <p>{missingConfig
+        ? "Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in your Vercel Project Environment Variables and redeploy."
+        : missingSchema
+          ? "Your Turso database is connected, but its tables have not been created yet. Run npm run db:push against your Turso database."
+          : "The website could not connect to the database. Verify TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel Environment Variables."}</p>
+      <p className="muted">Check <a className="text-link" href="/api/health">/api/health</a> for live connection diagnostics.</p>
+    </main>;
+  }
+  const {page,row,query,site,preview}=resolved;
   const order=site.nav_order.toLowerCase().split(",").map(value=>value.trim());
   const nav=links.filter(([,path])=>path!=="gallery"||site.show_gallery==="1").map(([label,path])=>({label,href:"/"+path}));
   nav.sort((a,b)=>(order.indexOf(a.label.toLowerCase())+1||100)-(order.indexOf(b.label.toLowerCase())+1||100));
