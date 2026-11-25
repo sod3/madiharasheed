@@ -1,19 +1,26 @@
-import { createClient, type Client, type InValue } from "@libsql/client";
+import { createRequire } from "node:module";
+import { createClient as createWebClient, type Client, type InValue } from "@libsql/client/web";
 
 const globalForDb = globalThis as typeof globalThis & { __libsqlClient?: Client };
 
 function getClient(): Client {
   if (globalForDb.__libsqlClient) return globalForDb.__libsqlClient;
-  const url = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
-  if (!url) {
-    if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
-      throw new Error("Database unavailable: set TURSO_DATABASE_URL or DATABASE_URL.");
-    }
+  const rawUrl = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
+  if (!rawUrl && process.env.VERCEL === "1") {
+    throw new Error("Database unavailable: set TURSO_DATABASE_URL or DATABASE_URL in Vercel Environment Variables.");
   }
-  const client = createClient({
-    url: url || "file:local.db",
-    authToken: process.env.TURSO_AUTH_TOKEN || process.env.DATABASE_AUTH_TOKEN || undefined,
-  });
+  const url = rawUrl || "file:local.db";
+  const authToken = process.env.TURSO_AUTH_TOKEN || process.env.DATABASE_AUTH_TOKEN || undefined;
+
+  let client: Client;
+  if (/^file:/i.test(url)) {
+    const require = createRequire(import.meta.url);
+    const { createClient } = require("@libsql/client") as typeof import("@libsql/client");
+    client = createClient({ url, authToken });
+  } else {
+    client = createWebClient({ url, authToken });
+  }
+
   globalForDb.__libsqlClient = client;
   return client;
 }

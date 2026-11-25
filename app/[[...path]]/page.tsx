@@ -28,10 +28,11 @@ const catalogue:Record<string,Catalogue>={courses:"courses",reflections:"article
 type Props={params:Promise<{path?:string[]}>;searchParams:Promise<Query>};
 
 async function resolve(props:Props){
-  const [{path=[]},query,site]=await Promise.all([props.params,props.searchParams,settings()]);
+  const [{path=[]},query]=await Promise.all([props.params,props.searchParams]);
   const page=path[0]??"",slug=path[1];
-  if (path.length>2||!Object.hasOwn(descriptions,page)||path.length===2&&!Object.hasOwn(catalogue,page)||
-    (page==="gallery"&&site.show_gallery!=="1")||(page==="resources"&&site.show_resources!=="1")||(page==="speaking"&&site.show_speaking!=="1"))notFound();
+  if (path.length>2||!Object.hasOwn(descriptions,page)||(path.length===2&&!Object.hasOwn(catalogue,page)))notFound();
+  const site=await settings();
+  if ((page==="gallery"&&site.show_gallery!=="1")||(page==="resources"&&site.show_resources!=="1")||(page==="speaking"&&site.show_speaking!=="1"))notFound();
   const preview=!!slug&&q(query,"preview")==="1"&&!!await admin();
   const row=slug?await item(catalogue[page],slug,preview):null;
   if (slug&&!row)notFound();
