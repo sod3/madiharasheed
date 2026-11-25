@@ -1,5 +1,4 @@
 import { cache } from "react";
-import { env } from "cloudflare:workers";
 import { all, one, type Row } from "@/db";
 import { defaults, type Settings } from "./domain";
 import { exampleArticles, exampleCourses, exampleGallery } from "./sample";
@@ -36,5 +35,8 @@ export const collection=cache(async (type:Collection):Promise<Row[]>=>{
   const result=await all(query+" LIMIT 150");
   return result.length || type!=="gallery_items" || (await settings()).show_demo!=="1" ? result : exampleGallery;
 });
-export function origin(){return new URL(env.SITE_URL??"http://localhost:5173").origin;}
+export function origin(){
+  const raw = process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? "https://"+process.env.VERCEL_PROJECT_PRODUCTION_URL : process.env.VERCEL_URL ? "https://"+process.env.VERCEL_URL : "http://localhost:3000");
+  return new URL(raw).origin;
+}
 export function absolute(path:string){return new URL(path,origin()).href;}

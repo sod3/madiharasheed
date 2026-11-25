@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     ".sites-runtime/**",
     "outputs/**",
     "work/**",
+    "worker/**",
+    "scripts/**",
+    "vite.config.ts",
+    "cloudflare-env.d.ts",
   ]),
   {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],

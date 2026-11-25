@@ -94,3 +94,25 @@ export function AdminAction({action,id,label}:{action:"invite"|"sync";id:number;
       <button className="text-link" type="button" onClick={async()=>{try{await navigator.clipboard.writeText(result.url??"");setCopied(true);}catch{setCopied(false);}}}>{copied?"Copied":"Copy review link"}</button></div>}
   </div>;
 }
+export function AdminLogin({requiresEmail}:{requiresEmail:boolean}){
+  const [busy,setBusy]=useState(false),[status,setStatus]=useState<Result|null>(null);
+  async function submit(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();if(busy)return;
+    setBusy(true);setStatus(null);
+    try{
+      const result=await send("login",Object.fromEntries(new FormData(event.currentTarget)));
+      setStatus(result);
+      if(result.ok)location.reload();
+    }finally{setBusy(false);}
+  }
+  return <form className="form" style={{width:"min(100%, 24rem)"}} onSubmit={submit}>
+    {requiresEmail&&<label>Email address<input type="email" name="email" autoComplete="email" maxLength={254} required/></label>}
+    <label>Password<input type="password" name="password" autoComplete="current-password" maxLength={400} required/></label>
+    <div className="actions"><button className="button" disabled={busy}>{busy?"Signing in…":"Sign in"}</button><a href="/" className="button outline">Back to website</a></div>
+    {status&&<p className={status.ok?"status":"status error"} role={status.ok?"status":"alert"}>{status.message}</p>}
+  </form>;
+}
+export function AdminSignOut(){
+  const [busy,setBusy]=useState(false);
+  return <button type="button" className="text-link" disabled={busy} onClick={async()=>{setBusy(true);try{await send("logout",{});location.assign("/admin");}finally{setBusy(false);}}}>{busy?"Signing out…":"Sign out"}</button>;
+}

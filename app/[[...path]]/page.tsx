@@ -1,6 +1,5 @@
 import type {Metadata} from "next";
 import {notFound} from "next/navigation";
-import {env} from "cloudflare:workers";
 import {absolute,item,origin,settings,type Catalogue} from "@/lib/content";
 import {images,href,q,text,type Query} from "@/lib/domain";
 import {admin} from "@/lib/security";
@@ -46,7 +45,7 @@ export async function generateMetadata(props:Props):Promise<Metadata>{
   const description=row?text(row,"seo_description")||text(row,"summary")||summary:summary;
   const url=absolute("/"+page+(slug?"/"+slug:""));
   const image=absolute(href(row?.image)||href(site.hero_image)||images.hero);
-  const index=!row?.demo&&!preview&&!q(query,"invite")&&page!=="newsletter"&&env.PRIVATE_PREVIEW!=="1";
+  const index=!row?.demo&&!preview&&!q(query,"invite")&&page!=="newsletter"&&process.env.PRIVATE_PREVIEW!=="1";
   return {title,description,metadataBase:new URL(origin()),alternates:{canonical:url},robots:{index,follow:index},
     openGraph:{type:page==="reflections"&&row?"article":"website",title,description,url,siteName:site.site_title,images:[image]},
     twitter:{card:"summary_large_image",title,description,images:[image]}};
@@ -70,5 +69,5 @@ export default async function Page(props:Props){
     case "newsletter":content=<NewsletterPage site={site} query={query}/>;break;
     case "privacy":content=<Privacy/>;break;
   }
-  return <><Header title={site.site_title} links={nav} current={"/"+page}/><main id="main">{content}</main><Footer site={site}/><Metrics id={env.GA_ID??""}/></>;
+  return <><Header title={site.site_title} links={nav} current={"/"+page}/><main id="main">{content}</main><Footer site={site}/><Metrics id={process.env.GA_ID??""}/></>;
 }

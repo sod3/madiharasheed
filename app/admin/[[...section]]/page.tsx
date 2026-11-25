@@ -4,12 +4,11 @@ import {Activity,BookOpen,ClipboardList,FileText,Mail,MessageCircle,Search,Setti
 import {all,one,type Row} from "@/db";
 import {settings,now} from "@/lib/content";
 import {date,q,text,type Query} from "@/lib/domain";
-import {admin,integer} from "@/lib/security";
+import {admin,adminConfigured,adminEmailRequired,integer} from "@/lib/security";
 import {choices,dashboard} from "@/lib/admin";
 import {modules,moduleFor,sections,settingGroups,type Module} from "@/lib/cms";
 import {deliveryConfigured} from "@/lib/newsletter";
-import {chatGPTSignInPath,getChatGPTUser} from "@/app/chatgpt-auth";
-import {AdminAction,Editor} from "@/components/editor";
+import {AdminAction,AdminLogin,AdminSignOut,Editor} from "@/components/editor";
 import "./admin.css";
 
 export const dynamic="force-dynamic";
@@ -25,10 +24,9 @@ function state(row:Row){
 export default async function Admin({params,searchParams}:{params:Promise<{section?:string[]}>;searchParams:Promise<Query>}) {
   const user=await admin();
   if(!user){
-    const signedIn=await getChatGPTUser();
     return <main id="main" className="admin-gate reading section"><BookOpen size={31}/><h1>Editor access</h1>
-      <p>{signedIn?"This account does not have editing access.":"Sign in with an authorized account to manage this website."}</p>
-      <div className="actions"><a className="button" href={chatGPTSignInPath("/admin")} target="_top">Sign in with ChatGPT</a><a href="/" className="button outline">Back to website</a></div></main>;
+      <p>{adminConfigured()?"Sign in to manage this website.":"Admin login is not configured yet. Set ADMIN_PASSWORD and RATE_SECRET (32+ characters) in your environment variables."}</p>
+      {adminConfigured()?<AdminLogin requiresEmail={adminEmailRequired()}/>:<div className="actions"><a href="/" className="button outline">Back to website</a></div>}</main>;
   }
   const [{section=[]},query,site]=await Promise.all([params,searchParams,settings()]);
   const key=section[0]??"",module=moduleFor(key);
@@ -38,7 +36,7 @@ export default async function Admin({params,searchParams}:{params:Promise<{secti
       <nav aria-label="Editor sections"><a href="/admin" aria-current={!key?"page":undefined}>Overview</a>
         {Object.entries(sections).map(([label,keys])=><details key={label} open><summary>{label}</summary>{keys.map(item=><a href={"/admin/"+item} aria-current={key===item?"page":undefined} key={item}>{modules[item].label}</a>)}</details>)}
         <a href="/admin/settings" aria-current={key==="settings"?"page":undefined}><Settings size={16}/> Website settings</a></nav>
-      <a className="text-link" href="/">View website</a></aside>
+      <a className="text-link" href="/">View website</a><AdminSignOut/></aside>
     <main className="admin-main" id="main">
       {!key?<Overview/>:key==="settings"?<><div className="editor-title"><div><h1>Website settings</h1><p>Edit the author profile, homepage, contact details, and navigation.</p></div></div>
         <div className="settings-groups">{settingGroups.map((group,index)=><details className="admin-panel" key={group.title} open={index===0}><summary>{group.title}</summary>

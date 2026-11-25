@@ -1,17 +1,17 @@
-import { env } from "cloudflare:workers";
 import { one,run,type Row } from "@/db";
-import { absolute,now } from "./content";
+import { absolute,now,origin } from "./content";
 import { InputError,matches,sign,token } from "./security";
 type Mode="confirm"|"unsubscribe"|"access";
 const threeDays=3*86400_000;
 const week=7*86400_000;
 const cookie="writing_room_reader";
-export const deliveryConfigured=()=>!!env.RESEND_API_KEY && !!env.NEWSLETTER_FROM;
+const secureCookie=()=>origin().startsWith("https://")?"; Secure":"";
+export const deliveryConfigured=()=>!!process.env.RESEND_API_KEY && !!process.env.NEWSLETTER_FROM;
 async function resend(path:string,data:Record<string,unknown>,method="POST",idempotency=""){
-  if (!env.RESEND_API_KEY) return false;
+  if (!process.env.RESEND_API_KEY) return false;
   try {
     const result=await fetch("https://api.resend.com"+path,{method,signal:AbortSignal.timeout(8000),
-      headers:{Authorization:"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json",...(idempotency?{"Idempotency-Key":idempotency}:{})},
+      headers:{Authorization:"Bearer "+process.env.RESEND_API_KEY,"Content-Type":"application/json",...(idempotency?{"Idempotency-Key":idempotency}:{})},
       body:JSON.stringify(data)});
     return result.ok;
   } catch {return false;}
@@ -25,7 +25,7 @@ async function link(row:Row,mode:Mode,resource=""){
   return absolute("/newsletter?"+params.toString());
 }
 async function send(row:Row,subject:string,message:string,requestId:string){
-  return deliveryConfigured() && resend("/emails",{from:env.NEWSLETTER_FROM,to:[row.email],subject,text:message},"POST",requestId);
+  return deliveryConfigured() && resend("/emails",{from:process.env.NEWSLETTER_FROM,to:[row.email],subject,text:message},"POST",requestId);
 }
 
 export async function subscribe(name:string,email:string,resource:string) {
@@ -58,15 +58,15 @@ export async function subscribe(name:string,email:string,resource:string) {
 }
 
 export async function sync(id:number){
-  if (!env.RESEND_SEGMENT_ID || !env.RESEND_API_KEY) return false;
+  if (!process.env.RESEND_SEGMENT_ID || !process.env.RESEND_API_KEY) return false;
   for (let attempt=0;attempt<3;attempt++) {
     const row=await one("SELECT * FROM newsletter_subscribers WHERE id=?",id);
     if (!row) return false;
     const path="/contacts/"+encodeURIComponent(String(row.email));
     const sent=row.status!=="confirmed"
       ? await resend(path,{unsubscribed:true},"PATCH")
-      : await resend("/contacts",{email:row.email,first_name:row.name,unsubscribed:false,segments:[{id:env.RESEND_SEGMENT_ID}]})
-        || (await resend(path,{unsubscribed:false,first_name:row.name},"PATCH") && await resend(path+"/segments/"+env.RESEND_SEGMENT_ID,{}));
+      : await resend("/contacts",{email:row.email,first_name:row.name,unsubscribed:false,segments:[{id:process.env.RESEND_SEGMENT_ID}]})
+        || (await resend(path,{unsubscribed:false,first_name:row.name},"PATCH") && await resend(path+"/segments/"+process.env.RESEND_SEGMENT_ID,{}));
     const saved=await run("UPDATE newsletter_subscribers SET sync_status=? WHERE id=? AND status=? AND token_salt=?",sent?"synced":"retry",id,row.status,row.token_salt);
     if (saved.meta.changes) return sent;
   }
@@ -83,7 +83,7 @@ export async function subscriberAction(mode:Mode,code:string) {
   if (mode==="unsubscribe"){
     await run("UPDATE newsletter_subscribers SET status='unsubscribed',unsubscribed_at=COALESCE(unsubscribed_at,?) WHERE id=? AND token_salt=?",now(),id,row.token_salt);
     await sync(id);
-    return {message:"You’ve been unsubscribed.",cookie:cookie+"=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax",confirmed:false};
+    return {message:"You’ve been unsubscribed.",cookie:cookie+"=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"+secureCookie(),confirmed:false};
   }
   if (row.status==="unsubscribed" || (mode==="access" && (row.status!=="confirmed" || !row.sent_at || Date.now()-Date.parse(String(row.sent_at))>week))) {
     throw new InputError("Request a fresh link from the newsletter or resource page.");
@@ -99,7 +99,7 @@ export async function subscriberAction(mode:Mode,code:string) {
   if (!current) throw new InputError("This link has been replaced. Request a fresh link.");
   const payload=id+"."+Math.floor((Date.now()+week)/1000);
   const proof=payload+"."+await sign("reader|"+payload+"|"+row.token_salt);
-  return {message:mode==="access"?"Your resource is ready.":"Your subscription is confirmed.",cookie:cookie+"="+proof+"; Path=/; Max-Age=604800; Secure; HttpOnly; SameSite=Lax",confirmed:!!confirmed};
+  return {message:mode==="access"?"Your resource is ready.":"Your subscription is confirmed.",cookie:cookie+"="+proof+"; Path=/; Max-Age=604800; HttpOnly; SameSite=Lax"+secureCookie(),confirmed:!!confirmed};
 }
 export async function hasSubscription(request:Request){
   const value=request.headers.get("cookie")?.split(";").map(c=>c.trim()).find(c=>c.startsWith(cookie+"="))?.slice(cookie.length+1)??"";
@@ -109,14 +109,14 @@ export async function hasSubscription(request:Request){
   return !!row && matches(parts[3],await sign("reader|"+parts[1]+"."+parts[2]+"|"+row.token_salt));
 }
 export async function webhook(request:Request) {
-  if (!env.RESEND_WEBHOOK_SECRET) return new Response(null,{status:404});
+  if (!process.env.RESEND_WEBHOOK_SECRET) return new Response(null,{status:404});
   const id=request.headers.get("svix-id")??"";
   const time=request.headers.get("svix-timestamp")??"";
   const signatures=request.headers.get("svix-signature")??"";
   if (!id || !/^\d{10}$/.test(time) || Math.abs(Date.now()/1000-Number(time))>300) return new Response(null,{status:401});
   const raw=await request.text();
   if (raw.length>100_000) return new Response(null,{status:413});
-  const bytes=Uint8Array.from(atob(env.RESEND_WEBHOOK_SECRET.replace(/^whsec_/,"")),char=>char.charCodeAt(0));
+  const bytes=Uint8Array.from(atob(process.env.RESEND_WEBHOOK_SECRET.replace(/^whsec_/,"")),char=>char.charCodeAt(0));
   const key=await crypto.subtle.importKey("raw",bytes,{name:"HMAC",hash:"SHA-256"},false,["sign"]);
   const signature="v1,"+btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(id+"."+time+"."+raw)))));
   if (!signatures.split(" ").some(value=>matches(value,signature))) return new Response(null,{status:401});

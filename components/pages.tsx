@@ -1,4 +1,3 @@
-import {env} from "cloudflare:workers";
 import {BookOpen,Feather,MessagesSquare,Mail,MessageCircle,Mic,CalendarDays,Clock,MonitorPlay,Download} from "lucide-react";
 import {all,type Row} from "@/db";
 import {absolute,collection,list,type Catalogue} from "@/lib/content";
@@ -265,5 +264,5 @@ export function Privacy(){
     <div className="reading section stack"><section><h2>Messages and reviews</h2><p>The site uses contact details to respond to inquiries and verify eligibility to review a course. Approved reviews show your name, rating, and feedback. Your email address stays private.</p></section>
       <section><h2>Newsletter</h2><p>The site records consent and sends an email confirmation when delivery is configured. Use the unsubscribe link in a newsletter email to withdraw consent.</p></section>
       <section><h2>Site usage</h2><p>The site measures visits and registration clicks and uses short-lived request limits to prevent spam. WhatsApp opens separately when you use a WhatsApp link.</p>
-        {env.GA_ID&&<PrivacyPreference/>}</section><section><h2>Questions</h2><p>Use the <a className="text-link" href="/contact">contact form</a> to ask about your information.</p></section></div></>;
+        {process.env.GA_ID&&<PrivacyPreference/>}</section><section><h2>Questions</h2><p>Use the <a className="text-link" href="/contact">contact form</a> to ask about your information.</p></section></div></>;
 }
