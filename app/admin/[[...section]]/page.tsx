@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 import {notFound} from "next/navigation";
 import {Activity,BookOpen,ClipboardList,FileText,Mail,MessageCircle,Search,Settings,Star,Users} from "lucide-react";
-import {all,one,type Row} from "@/db";
+import {findMany,findOne,type Row} from "@/db";
 import {settings,now} from "@/lib/content";
 import {date,q,text,type Query} from "@/lib/domain";
 import {admin,adminConfigured,adminEmailRequired,integer} from "@/lib/security";
@@ -64,10 +64,16 @@ async function ModulePage({module,moduleKey,query}:{module:Module;moduleKey:stri
   const id=integer(q(query,"edit")),make=q(query,"new")==="1"&&!module.readOnly;
   const search=q(query,"q"),page=Math.min(integer(q(query,"page"))||1,400);
   const table=module.table,searchBy=["participants","subscribers","testimonials","comments"].includes(moduleKey)?"name":"title";
-  const columns=moduleKey==="participants"?"id,name,email,course_id,batch_id,created_at":moduleKey==="subscribers"?"id,name,email,status,consent_at,sync_status":"*";
+  const escaped=search.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const filter=search?{[searchBy]:{$regex:escaped,$options:"i"}}:{};
+  const projection=moduleKey==="participants"
+    ? {_id:0,id:1,name:1,email:1,course_id:1,batch_id:1,created_at:1}
+    : moduleKey==="subscribers"
+      ? {_id:0,id:1,name:1,email:1,status:1,consent_at:1,sync_status:1}
+      : {_id:0};
   const [rows,record,options]=await Promise.all([
-    all("SELECT "+columns+" FROM "+table+" WHERE "+searchBy+" LIKE ? ORDER BY id DESC LIMIT 26 OFFSET ?","%"+search+"%",(page-1)*25),
-    id?one("SELECT * FROM "+table+" WHERE id=?",id):null,make||id?choices(module.fields):{},
+    findMany(table,filter,{sort:{id:-1},skip:(page-1)*25,limit:26,projection}),
+    id?findOne(table,{id}):null,make||id?choices(module.fields):{},
   ]);
   if(id&&!record)notFound();
   const path="/admin/"+moduleKey,label=record?String(record.title||record.name||"Record"):"New record";

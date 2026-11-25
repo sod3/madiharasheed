@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { one, run } from "@/db";
+import { col, isDuplicateError } from "@/db";
 import { origin } from "./content";
 
 export class InputError extends Error {
@@ -82,6 +82,7 @@ export const json = (message: string, status = 200) => Response.json({ message }
 
 export function error(error: unknown) {
   if (error instanceof InputError) return json(error.message, error.status);
+  if (isDuplicateError(error)) return json("A record with these details already exists.", 409);
   const message = error instanceof Error ? error.message : "";
   if (/UNIQUE constraint failed/i.test(message)) return json("A record with these details already exists.", 409);
   if (/FOREIGN KEY constraint failed/i.test(message)) return json("Please choose an existing related record.", 400);
@@ -162,19 +163,26 @@ export function visitor(request: Request, scope: string) {
   return sign(scope + "|" + ip + "|" + (request.headers.get("user-agent") ?? "").slice(0, 180));
 }
 export async function limit(request: Request, action: string, max = 8) {
-  const now = Math.floor(Date.now() / 1000),
-    bucket = Math.floor(now / 900);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const bucket = Math.floor(nowSec / 900);
   const key = await visitor(request, action + "|" + bucket);
-  const row = await one<{ hits: number }>(
-    "INSERT INTO request_limits(key,hits,expires_at) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET hits=hits+1 RETURNING hits",
-    key,
-    (bucket + 1) * 900,
+  const limitsCol = await col<{ key: string; hits: number; expires_at: number }>("request_limits");
+  const row = await limitsCol.findOneAndUpdate(
+    { key },
+    { $inc: { hits: 1 }, $setOnInsert: { key, expires_at: (bucket + 1) * 900 } },
+    { upsert: true, returnDocument: "after" },
   );
-  if (row && row.hits > max) throw new InputError("Too many requests. Try again in a few minutes.", 429);
-  if (Math.random() < 0.025) await run("DELETE FROM request_limits WHERE expires_at<?", now);
+  if (row && Number(row.hits) > max) throw new InputError("Too many requests. Try again in a few minutes.", 429);
+  if (Math.random() < 0.025) await limitsCol.deleteMany({ expires_at: { $lt: nowSec } });
 }
 export async function track(request: Request, event: string, path: string) {
   if (!/^\/(?:|[a-z-]{1,35}(?:\/[a-z0-9-]{1,100})?)$/.test(path) || /^\/(admin|api|newsletter)(\/|$)/.test(path)) return;
   const day = new Date().toISOString().slice(0, 10);
-  await run("INSERT OR IGNORE INTO analytics_events(event,path,visitor,bucket) VALUES(?,?,?,?)", event, path, await visitor(request, "metrics|" + day), day);
+  const v = await visitor(request, "metrics|" + day);
+  const eventsCol = await col("analytics_events");
+  await eventsCol.updateOne(
+    { event, path, visitor: v, bucket: day },
+    { $setOnInsert: { event, path, visitor: v, bucket: day, created_at: new Date().toISOString() } },
+    { upsert: true },
+  );
 }

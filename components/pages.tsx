@@ -1,5 +1,5 @@
 import {BookOpen,Feather,MessagesSquare,Mail,MessageCircle,Mic,CalendarDays,Clock,MonitorPlay,Download} from "lucide-react";
-import {all,type Row} from "@/db";
+import {col,findMany,type Row} from "@/db";
 import {absolute,collection,list,type Catalogue} from "@/lib/content";
 import {categories,courseStates,date,href,images,openCourse,phone,q,readings,stars,text,whatsapp,type Query,type Settings} from "@/lib/domain";
 import {exampleModules} from "@/lib/sample";
@@ -133,12 +133,30 @@ export async function CataloguePage({type,site,query}:{type:Catalogue;site:Setti
   </section>{articles&&<Newsletter site={site}/>}</>;
 }
 export async function CourseDetail({row,site,preview,query}:{row:Row;site:Settings;preview:boolean;query:Query}){
-  const [modules,batches,reviews,distribution]=row.demo?[exampleModules[row.id]??[],[],[],[]]:await Promise.all([
-    all<{title:string;body:string}>("SELECT title,body FROM course_modules WHERE course_id=? ORDER BY position,id",row.id),
-    all("SELECT * FROM course_batches WHERE course_id=? ORDER BY starts_on IS NULL,starts_on,id",row.id),
-    all("SELECT r.id,r.name,r.rating,r.title,r.body,r.reply,r.created_at,(SELECT COUNT(*) FROM review_votes v WHERE v.review_id=r.id) AS helpful FROM reviews r WHERE r.course_id=? AND r.status='published' ORDER BY r.created_at DESC,r.id DESC LIMIT 9",row.id),
-    all("SELECT rating,COUNT(*) AS count FROM reviews WHERE course_id=? AND status='published' GROUP BY rating",row.id),
+  const [modules,batchesRaw,reviews,distribution]=row.demo?[exampleModules[row.id]??[],[],[],[]]:await Promise.all([
+    findMany<{title:string;body:string}>("course_modules",{course_id:row.id},{sort:{position:1,id:1},projection:{_id:0,title:1,body:1}}),
+    findMany("course_batches",{course_id:row.id},{sort:{starts_on:1,id:1}}),
+    (async ()=>{
+      const reviewsCol=await col("reviews");
+      return reviewsCol.aggregate<Row>([
+        {$match:{course_id:row.id,status:"published"}},
+        {$lookup:{from:"review_votes",localField:"id",foreignField:"review_id",as:"_votes"}},
+        {$addFields:{helpful:{$size:"$_votes"}}},
+        {$sort:{created_at:-1,id:-1}},
+        {$limit:9},
+        {$project:{_id:0,id:1,name:1,rating:1,title:1,body:1,reply:1,created_at:1,helpful:1}},
+      ]).toArray();
+    })(),
+    (async ()=>{
+      const reviewsCol=await col("reviews");
+      const dist=await reviewsCol.aggregate<{_id:number;count:number}>([
+        {$match:{course_id:row.id,status:"published"}},
+        {$group:{_id:"$rating",count:{$sum:1}}},
+      ]).toArray();
+      return dist.map(d=>({id:d._id,rating:d._id,count:d.count}));
+    })(),
   ]);
+  const batches=[...batchesRaw].sort((a,b)=>(!a.starts_on?1:0)-(!b.starts_on?1:0)||String(a.starts_on??"").localeCompare(String(b.starts_on??""))||a.id-b.id);
   const start=batches.find(batch=>batch.availability==="Open"),instructor=row.instructor||site.author_name;
   const faq=text(row,"faq").split(/\r?\n/).map(line=>line.split("|")).filter(parts=>parts.length>=2);
   const invite=q(query,"invite");
@@ -170,7 +188,7 @@ export async function CourseDetail({row,site,preview,query}:{row:Row;site:Settin
 }
 export async function ArticleDetail({row,site,preview}:{row:Row;site:Settings;preview:boolean}){
   const author=row.author||(!row.demo?site.author_name:""),url=absolute("/reflections/"+row.slug);
-  const [articles,comments]=await Promise.all([list("articles"),row.comments_enabled&&!preview?all("SELECT id,name,body,created_at FROM comments WHERE article_id=? AND status='published' ORDER BY id DESC LIMIT 50",row.id):Promise.resolve([])]);
+  const [articles,comments]=await Promise.all([list("articles"),row.comments_enabled&&!preview?findMany("comments",{article_id:row.id,status:"published"},{sort:{id:-1},limit:50,projection:{_id:0,id:1,name:1,body:1,created_at:1}}):Promise.resolve([])]);
   const related=articles.filter(article=>article.id!==row.id).sort((a,b)=>Number(b.category===row.category)-Number(a.category===row.category)).slice(0,3);
   const lang=row.language==="ur"?"ur":"en",direction=lang==="ur"?"rtl":"ltr";
   return <>

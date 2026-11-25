@@ -1,4 +1,4 @@
-import { all, run } from "@/db";
+import { col, findMany } from "@/db";
 import { duplicate, invite, remove, save, saveSettings } from "@/lib/admin";
 import { mediaMax, upload } from "@/lib/media";
 import { sync } from "@/lib/newsletter";
@@ -16,12 +16,13 @@ export async function GET(_request: Request, { params }: Route) {
   const keys = ["name", "email", "status", "consent_source", "consent_at", "confirmed_at", "unsubscribed_at"];
   const encoder = new TextEncoder();
   let cursor = 0;
+  const projection = Object.fromEntries([["_id", 0], ["id", 1], ...keys.map((k) => [k, 1])]);
   const stream = new ReadableStream({
     start(controller) {
       controller.enqueue(encoder.encode(keys.map(csv).join(",") + "\r\n"));
     },
     async pull(controller) {
-      const rows = await all("SELECT id," + keys.join(",") + " FROM newsletter_subscribers WHERE id>? ORDER BY id LIMIT 500", cursor);
+      const rows = await findMany("newsletter_subscribers", { id: { $gt: cursor } }, { sort: { id: 1 }, limit: 500, projection });
       if (rows.length) {
         cursor = rows.at(-1)!.id;
         controller.enqueue(encoder.encode(rows.map((row) => keys.map((key) => csv(row[key])).join(",")).join("\r\n") + "\r\n"));
@@ -75,11 +76,10 @@ export async function POST(request: Request, { params }: Route) {
     }
     const data = await read(request),
       id = integer(data.id);
-    await run(
-      "INSERT INTO admin_users(user_id,email,last_seen_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET email=excluded.email,last_seen_at=excluded.last_seen_at",
-      user.userId,
-      user.email,
-      new Date().toISOString(),
+    await (await col("admin_users")).updateOne(
+      { user_id: user.userId },
+      { $set: { user_id: user.userId, email: user.email, last_seen_at: new Date().toISOString() } },
+      { upsert: true },
     );
     switch (action) {
       case "settings":

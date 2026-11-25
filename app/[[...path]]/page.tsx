@@ -63,16 +63,12 @@ export default async function Page(props:Props){
     resolved = await resolve(props);
   } catch (err) {
     unstable_rethrow(err);
-    const message = err instanceof Error ? err.message : "";
-    const missingConfig = !databaseConfigured() && process.env.VERCEL === "1";
-    const missingSchema = /no such table/i.test(message);
+    const missingConfig = !databaseConfigured();
     return <main id="main" className="reading section stack">
       <h1>Database setup required</h1>
       <p>{missingConfig
-        ? "Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in your Vercel Project Environment Variables and redeploy."
-        : missingSchema
-          ? "Your Turso database is connected, but its tables have not been created yet. Run npm run db:push against your Turso database."
-          : "The website could not connect to the database. Verify TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in Vercel Environment Variables."}</p>
+        ? "Set MONGODB_URI in your Vercel Project Environment Variables (and .env.local locally) and redeploy."
+        : "The website could not connect to MongoDB. Verify MONGODB_URI and ensure MongoDB Atlas Network Access allows Vercel (0.0.0.0/0)."}</p>
       <p className="muted">Check <a className="text-link" href="/api/health">/api/health</a> for live connection diagnostics.</p>
     </main>;
   }
