@@ -1,9 +1,10 @@
 import type {Metadata} from "next";
+import Link from "next/link";
 import {notFound} from "next/navigation";
 import {Activity,BookOpen,ClipboardList,FileText,Mail,MessageCircle,Search,Settings,Star,Users} from "lucide-react";
 import {findMany,findOne,type Row} from "@/db";
 import {settings,now} from "@/lib/content";
-import {date,q,text,type Query} from "@/lib/domain";
+import {date,q,type Query} from "@/lib/domain";
 import {admin,adminConfigured,adminEmailRequired,integer} from "@/lib/security";
 import {choices,dashboard} from "@/lib/admin";
 import {modules,moduleFor,sections,settingGroups,type Module} from "@/lib/cms";
@@ -26,21 +27,21 @@ export default async function Admin({params,searchParams}:{params:Promise<{secti
   if(!user){
     return <main id="main" className="admin-gate reading section"><BookOpen size={31}/><h1>Editor access</h1>
       <p>{adminConfigured()?"Sign in to manage this website.":"Admin login is not configured yet. Set ADMIN_PASSWORD and RATE_SECRET (32+ characters) in your environment variables."}</p>
-      {adminConfigured()?<AdminLogin requiresEmail={adminEmailRequired()}/>:<div className="actions"><a href="/" className="button outline">Back to website</a></div>}</main>;
+      {adminConfigured()?<AdminLogin requiresEmail={adminEmailRequired()}/>:<div className="actions"><Link href="/" className="button outline">Back to website</Link></div>}</main>;
   }
   const [{section=[]},query,site]=await Promise.all([params,searchParams,settings()]);
-  const key=section[0]??"",module=moduleFor(key);
-  if(section.length>1 || key&&key!=="settings"&&!module)notFound();
+  const key=section[0]??"",mod=moduleFor(key);
+  if(section.length>1 || key&&key!=="settings"&&!mod)notFound();
   return <div className="admin-layout">
-    <aside className="admin-nav"><a className="editor-brand" href="/admin"><BookOpen size={22}/><span>{site.site_title}<small>Website editor</small></span></a>
-      <nav aria-label="Editor sections"><a href="/admin" aria-current={!key?"page":undefined}>Overview</a>
-        {Object.entries(sections).map(([label,keys])=><details key={label} open><summary>{label}</summary>{keys.map(item=><a href={"/admin/"+item} aria-current={key===item?"page":undefined} key={item}>{modules[item].label}</a>)}</details>)}
-        <a href="/admin/settings" aria-current={key==="settings"?"page":undefined}><Settings size={16}/> Website settings</a></nav>
-      <a className="text-link" href="/">View website</a><AdminSignOut/></aside>
+    <aside className="admin-nav"><Link className="editor-brand" href="/admin"><BookOpen size={22}/><span>{site.site_title}<small>Website editor</small></span></Link>
+      <nav aria-label="Editor sections"><Link href="/admin" aria-current={!key?"page":undefined}>Overview</Link>
+        {Object.entries(sections).map(([label,keys])=><details key={label} open><summary>{label}</summary>{keys.map(item=><Link href={"/admin/"+item} aria-current={key===item?"page":undefined} key={item}>{modules[item].label}</Link>)}</details>)}
+        <Link href="/admin/settings" aria-current={key==="settings"?"page":undefined}><Settings size={16}/> Website settings</Link></nav>
+      <Link className="text-link" href="/">View website</Link><AdminSignOut/></aside>
     <main className="admin-main" id="main">
       {!key?<Overview/>:key==="settings"?<><div className="editor-title"><div><h1>Website settings</h1><p>Edit the author profile, homepage, contact details, and navigation.</p></div></div>
         <div className="settings-groups">{settingGroups.map((group,index)=><details className="admin-panel" key={group.title} open={index===0}><summary>{group.title}</summary>
-          <Editor module="settings" fields={group.fields} record={site}/></details>)}</div></>:module?<ModulePage module={module} moduleKey={key} query={query}/>:null}
+          <Editor module="settings" fields={group.fields} record={site}/></details>)}</div></>:mod?<ModulePage module={mod} moduleKey={key} query={query}/>:null}
     </main>
   </div>;
 }
@@ -51,14 +52,14 @@ async function Overview(){
     ["enrollments","Confirmed enrollments",Users,"participants"],["subscribers","Confirmed subscribers",Mail,"subscribers"],["articles","Published reflections",FileText,"articles"],
     ["reviews","Pending reviews",Star,"reviews"],["inquiries","New inquiries",ClipboardList,"inquiries"],
   ] as const;
-  return <><header className="editor-title"><div><h1>Overview</h1><p>Manage your writing, courses, and community.</p></div><a href="/" className="button outline">View website</a></header>
+  return <><header className="editor-title"><div><h1>Overview</h1><p>Manage your writing, courses, and community.</p></div><Link href="/" className="button outline">View website</Link></header>
     <div className="metric-grid">{metrics.map(([key,label,Icon,section])=>{
       const content=<><Icon size={20} strokeWidth={1.6}/><strong>{counts?.[key]??0}</strong><span>{label}</span></>;
-      return section?<a href={"/admin/"+section} className="metric" key={key}>{content}</a>:<div className="metric" key={key}>{content}</div>;
+      return section?<Link href={"/admin/"+section} className="metric" key={key}>{content}</Link>:<div className="metric" key={key}>{content}</div>;
     })}</div>
-    <div className="admin-cards"><section className="admin-panel"><h2>Profile and branding</h2><p>Add your verified biography, portrait, professional credentials, and contact details.</p><a className="text-link" href="/admin/settings">Open website settings</a></section>
+    <div className="admin-cards"><section className="admin-panel"><h2>Profile and branding</h2><p>Add your verified biography, portrait, professional credentials, and contact details.</p><Link className="text-link" href="/admin/settings">Open website settings</Link></section>
       <section className="admin-panel"><h2>Newsletter delivery</h2><p>{deliveryConfigured()?"Confirmation and welcome email are configured.":"Subscriber requests are stored. A verified Resend sender is required to deliver confirmation and welcome email."}</p>
-        <p className="muted">{counts?.pending??0} pending confirmations</p><a className="text-link" href="/admin/subscribers">Manage subscribers</a></section></div></>;
+        <p className="muted">{counts?.pending??0} pending confirmations</p><Link className="text-link" href="/admin/subscribers">Manage subscribers</Link></section></div></>;
 }
 async function ModulePage({module,moduleKey,query}:{module:Module;moduleKey:string;query:Query}){
   const id=integer(q(query,"edit")),make=q(query,"new")==="1"&&!module.readOnly;
@@ -78,9 +79,9 @@ async function ModulePage({module,moduleKey,query}:{module:Module;moduleKey:stri
   if(id&&!record)notFound();
   const path="/admin/"+moduleKey,label=record?String(record.title||record.name||"Record"):"New record";
   const title=(row:Row)=>row.title||row.name||"Record";
-  return <><header className="editor-title"><div><a href="/admin" className="text-link">Overview</a><h1>{module.label}</h1></div><div className="actions">
-    {!module.readOnly&&<a className="button" href={path+"?new=1"}>Add record</a>}
-    {moduleKey==="subscribers"&&<a className="button" href="/api/admin/export">Export CSV</a>}</div></header>
+  return <><header className="editor-title"><div><Link href="/admin" className="text-link">Overview</Link><h1>{module.label}</h1></div><div className="actions">
+    {!module.readOnly&&<Link className="button" href={path+"?new=1"}>Add record</Link>}
+    {moduleKey==="subscribers"&&<a className="button" href="/api/admin/export" download="newsletter-subscribers.csv">Export CSV</a>}</div></header>
     {(make||record)&&<section className="admin-panel current-editor"><div className="editor-bar"><div><h2>{label}</h2>{q(query,"saved")==="1"&&<p className="status" role="status">Record saved.</p>}</div>
       <div className="actions">{module.prefix&&record?.slug&&<a href={module.prefix+record.slug+"?preview=1"} target="_blank" rel="noreferrer" className="button outline small">Preview</a>}
       <a href={path} className="text-link">Close editor</a></div></div>

@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="13" fill="#4C1D95"/><path fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M32 23c-6-5-13-6-20-4v25c7-2 14-1 20 4 6-5 13-6 20-4V19c-7-2-14-1-20 4v25" /></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="mr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="100%" stop-color="#241042"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#mr-grad)"/>
+  <rect x="4" y="4" width="56" height="56" rx="10" fill="none" stroke="#DCCBEB" stroke-opacity="0.35" stroke-width="1.2"/>
+  <text x="32" y="40" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, 'Times New Roman', serif" font-size="25" font-weight="600" letter-spacing="-1">MR</text>
+</svg>

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import {useId,useState} from "react";
 import {ChevronDown,Upload} from "lucide-react";
 import type {Row} from "@/db";
@@ -108,7 +109,7 @@ export function AdminLogin({requiresEmail}:{requiresEmail:boolean}){
   return <form className="form" style={{width:"min(100%, 24rem)"}} onSubmit={submit}>
     {requiresEmail&&<label>Email address<input type="email" name="email" autoComplete="email" maxLength={254} required/></label>}
     <label>Password<input type="password" name="password" autoComplete="current-password" maxLength={400} required/></label>
-    <div className="actions"><button className="button" disabled={busy}>{busy?"Signing in…":"Sign in"}</button><a href="/" className="button outline">Back to website</a></div>
+    <div className="actions"><button className="button" disabled={busy}>{busy?"Signing in…":"Sign in"}</button><Link href="/" className="button outline">Back to website</Link></div>
     {status&&<p className={status.ok?"status":"status error"} role={status.ok?"status":"alert"}>{status.message}</p>}
   </form>;
 }

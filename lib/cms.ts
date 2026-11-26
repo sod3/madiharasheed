@@ -18,7 +18,7 @@ const category=field("category","Category");
 const dateLabel=field("date_label","Date or period");
 const issuer=field("issuer","Institution or issuer");
 const link=field("url","Related URL","url");
-const price=field("price","Price", "text",false,"Include the currency, or enter Free.");
+const price=field("price","Price","text",false,"Include the currency, or enter Free.");
 const publishing=[visible,field("published_at","Publication date and time (UTC)","datetime-local",false,"Leave empty to publish immediately when visible."),
   field("seo_title","Search title"),field("seo_description","Search description","long")];
 const course=relation("course_id","Course","courses",true);
@@ -27,7 +27,7 @@ const email=field("email","Email address","email",true);
 const moderation=select("status","Moderation status",["pending","published","rejected"]);
 export type Module={label:string;table:string;fields:Field[];prefix?:string;readOnly?:boolean};
 export const modules:Record<string,Module>={
-  courses:{label:"Courses",table:"courses",prefix:"/courses/",fields:[title,slug,relation("category_id","Category","course_categories"),summary,body,
+  courses:{label:"Courses & workshops",table:"courses",prefix:"/courses/",fields:[title,slug,relation("category_id","Category","course_categories"),summary,body,
     ...images,video,field("instructor","Instructor"),field("instructor_bio","Instructor biography","long"),field("duration","Duration"),
     select("format","Learning format",courseFormats),price,select("availability","Availability",courseStates),
     field("audience","Who it’s for","long",false,"Use one item per line."),field("outcomes","Learning outcomes","long",false,"Use one item per line."),
@@ -39,18 +39,18 @@ export const modules:Record<string,Module>={
     select("availability","Registration",["Open","Closed","Coming soon"])]},
   participants:{label:"Participants",table:"course_participants",fields:[course,relation("batch_id","Batch","course_batches"),name,email]},
   reviews:{label:"Student reviews",table:"reviews",fields:[moderation,field("reply","Public reply","long"),field("flagged","Flag for follow-up","checkbox")],readOnly:true},
-  articles:{label:"Reflections",table:"articles",prefix:"/reflections/",fields:[title,slug,relation("category_id","Category","article_categories"),
+  articles:{label:"Insights & reflections",table:"articles",prefix:"/reflections/",fields:[title,slug,relation("category_id","Category","article_categories"),
     select("language","Language",["en","ur"]),field("author","Byline"),summary,body,...images,field("comments_enabled","Allow moderated comments","checkbox"),featured,...publishing]},
-  "article-categories":{label:"Reflection categories",table:"article_categories",fields:[title,order]},
+  "article-categories":{label:"Insight categories",table:"article_categories",fields:[title,order]},
   comments:{label:"Comments",table:"comments",fields:[moderation],readOnly:true},
   publications:{label:"Publications",table:"publications",prefix:"/publications/",fields:[title,slug,category,field("publisher","Publisher"),field("issue_date","Publication date","date"),
     summary,body,...images,field("purchase_url","Purchase URL","url"),field("download_url","Authorized download","file"),field("reference_url","Reference URL","url"),...publishing]},
-  gallery:{label:"Gallery",table:"gallery_items",fields:[title,category,...images,video,caption,order,visible]},
+  gallery:{label:"Certificate & media gallery",table:"gallery_items",fields:[title,category,...images,video,caption,order,visible]},
   resources:{label:"Resources",table:"resources",fields:[title,slug,category,summary,...images,field("gated","Require confirmed newsletter subscription","checkbox"),field("file","Download","file",true),order,visible]},
   organizations:{label:"Organizations",table:"organizations",fields:[title,...images,link,order,visible]},
-  experience:{label:"Professional experience",table:"professional_experiences",fields:[title,relation("organization_id","Organization","organizations"),dateLabel,
+  experience:{label:"Experience & fellowships",table:"professional_experiences",fields:[title,relation("organization_id","Organization","organizations"),dateLabel,
     {...body,label:"Responsibilities and contributions"},field("impact","Professional impact","long"),...images,link,order,visible]},
-  achievements:{label:"Achievements",table:"achievements",fields:[title,select("category","Recognition category",["Academic achievements","Professional recognition","Awards and honors","Leadership achievements","Certifications","Social and community contributions","Special recognitions"]),issuer,dateLabel,body,...images,order,featured,visible]},
+  achievements:{label:"Certificates & honors",table:"achievements",fields:[title,select("category","Recognition category",["Fellowships & Programs","Leadership & Advocacy","Training & Mentorship","Community & Outreach","Research & Strategy","Academic achievements","Professional recognition","Awards and honors"]),issuer,dateLabel,body,...images,order,featured,visible]},
   qualifications:{label:"Education and training",table:"qualifications",fields:[title,issuer,dateLabel,body,order,visible]},
   milestones:{label:"Career timeline",table:"milestones",fields:[title,dateLabel,body,order,visible]},
   media:{label:"Media and speaking",table:"media_mentions",fields:[title,category,dateLabel,body,link,order,visible]},

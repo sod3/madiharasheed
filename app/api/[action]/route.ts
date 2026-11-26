@@ -1,4 +1,4 @@
-import { col, findOne, nextId, type Row } from "@/db";
+import { col, databaseConfigured, findOne, nextId, type Row } from "@/db";
 import { item, now, publishedFilter } from "@/lib/content";
 import { inquiryTypes } from "@/lib/domain";
 import { subscribe, subscriberAction, webhook } from "@/lib/newsletter";
@@ -45,6 +45,7 @@ export async function POST(request: Request, { params }: Route) {
     if (action === "resend-webhook") return await webhook(request);
     const data = await read(request);
     if (action === "events") {
+      if (!databaseConfigured()) return new Response(null, { status: 204 });
       await track(request, "page_view", input(data, "path", 155, true));
       return new Response(null, { status: 204 });
     }
