@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { BookOpen, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export function Brand({ title }: { title: string }) {
   return (
     <Link href="/" className="brand" prefetch={false}>
       <span className="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 30 30" width="25" height="25" fill="none" stroke="currentColor" strokeWidth="1.35">
-          <path d="M5 21 9.3 8l5.7 10 5.7-10L25 21M5 24h20" />
-          <path d="M9.3 8h2.8l5.7 10" opacity=".55" />
-        </svg>
+        <BookOpen size={20} strokeWidth={1.65} aria-hidden="true" />
       </span>
       <span>{title}</span>
     </Link>
