@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { col, isDuplicateError } from "@/db";
+import { col, databaseConfigured, isDuplicateError } from "@/db";
 import { origin } from "./content";
 
 export class InputError extends Error {
@@ -30,6 +30,10 @@ export function adminEmailRequired(): boolean {
 
 export function adminConfigured(): boolean {
   return !!(process.env.ADMIN_PASSWORD && process.env.RATE_SECRET && process.env.RATE_SECRET.length >= 32);
+}
+
+export function publicFormsConfigured(): boolean {
+  return databaseConfigured() && (process.env.RATE_SECRET?.length ?? 0) >= 32;
 }
 
 function cookieSecure(): string {

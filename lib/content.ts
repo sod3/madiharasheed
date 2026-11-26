@@ -33,6 +33,7 @@ export const now = () => new Date().toISOString();
 export function publishedFilter(stamp = now()) {
   return {
     visible: 1,
+    demo: { $nin: [1, true, "1", "true"] },
     $or: [
       { published_at: null },
       { published_at: { $exists: false } },
@@ -164,6 +165,12 @@ export const collection = cache(async (type: Collection): Promise<Row[]> => {
     return profileFallbacks[type] ?? [];
   }
   try {
+    if (type === "gallery_items") {
+      const records = await findMany(type, {}, { sort: { position: 1, id: 1 }, limit: 150 });
+      const images = new Set(records.map((row) => row.image).filter(Boolean));
+      const builtIn = profileGalleryCertificates.filter((row) => !images.has(row.image));
+      return [...builtIn, ...records.filter((row) => row.visible === 1)];
+    }
     let result = await findMany(type, { visible: 1 }, { sort: { position: 1, id: 1 }, limit: 150 });
     if (type === "professional_experiences" && result.length) {
       const orgIds = [...new Set(result.map((r) => Number(r.organization_id)).filter(Boolean))];

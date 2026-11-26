@@ -1,10 +1,5 @@
 import type { Row } from "@/db";
-
-export const images = {
-  hero: "/images/writing-desk.webp",
-  craft: "/images/writing-workshop.webp",
-  notes: "/images/notes.webp",
-};
+import { impactFigures } from "./impact-data";
 
 export const courseFormats = [
   "Live online",
@@ -38,6 +33,8 @@ export const legacyPrototypeDefaults: Record<string, string> = {
   hero_line_3: "Experiences that transform.",
   hero_description:
     "A space for meaningful reflections, transformative learning, and ideas shaped by a journey of professional excellence, curiosity, and purpose.",
+  hero_image: "/images/writing-desk.webp",
+  about_image: "/images/writing-workshop.webp",
   intro_title: "The work behind the words",
   newsletter_title: "A little wisdom in your inbox.",
   newsletter_description:
@@ -47,31 +44,30 @@ export const legacyPrototypeDefaults: Record<string, string> = {
 export const defaults = {
   site_title: "Madiha Rasheed",
   author_name: "Madiha Rasheed",
-  hero_label: "Karachi, Pakistan · Capability Building & Growth Strategy",
-  hero_line_1: "Capability that scales.",
-  hero_line_2: "Leadership with purpose.",
-  hero_line_3: "Growth built to endure.",
+  hero_label: "Capability building & growth strategy",
+  hero_line_1: "Building capabilities.",
+  hero_line_2: "Inspiring growth.",
+  hero_line_3: "Creating meaningful impact.",
   hero_description:
-    "BBA student and aspiring Capability Building Consultant & Growth Strategist advancing entrepreneurship, leadership, education, and socioeconomic development in Pakistan.",
+    "I work across leadership, entrepreneurship, and education to help people and communities build the skills to shape their own futures.",
   hero_image: "",
   hero_alt: "Madiha Rasheed",
-  intro_title: "Bridging current capability and full potential",
+  intro_title: "How do people build the skills to grow?",
   intro_body:
-    "I have dedicated the past few years to contributing to social and economic development in Pakistan across education, youth empowerment, and community-based initiatives.\n\nThrough market research, career counseling, and national leadership programs, I have seen how sustainable growth depends on entrepreneurship, purposeful leadership, and structured capacity building. In today’s evolving world, technology and AI-driven learning can accelerate how individuals and organizations grow and scale.",
+    "My work in Karachi has taken me from classrooms and community sessions to entrepreneurship research and career counseling. Each setting has shown me a different part of the same question, from finding a first opportunity to understanding which kinds of support make a difference.\n\nI bring those experiences to my growing practice in capability building, leadership development, and strategy.",
   intro_quote:
     "Sustainable economic growth is closely linked with strong entrepreneurship, leadership, and capacity building within individuals and organizations.",
   about_image: "",
   about_image_alt: "Madiha Rasheed",
   background:
-    "Based in Karachi, Pakistan, I am pursuing Bachelor of Business Administration studies in Organizational Behavior Studies (Iqra University) and Business Administration & Management (GU-Tech), building on a Pre-Engineering foundation from The Citizens Foundation College.\n\n## From community outreach to growth strategy\n\nMy journey spans grassroots social action, entrepreneurship apprenticeships, quantitative program evaluation, and career counseling. Whether facilitating Work Readiness and Digital Literacy workshops with CIRCLE Women Association, designing a 196-participant impact study for the Delhi Punjabi Saudagran Foundation, or guiding 30+ students through one-on-one career pathways with Mk Volunteers Team, every experience has reinforced my commitment to structured learning and measurable impact.\n\n## Looking forward\n\nMy long-term focus is to serve as a Capability Building Consultant and Growth Strategist—partnering with people and organizations to bridge the gap between present capability and long-term potential through strategy, leadership development, and technology-enabled learning.",
+    "I studied pre-engineering at The Citizens Foundation College before moving into business administration at Iqra University and GU-Tech. Along the way, an entrepreneurship apprenticeship gave me a chance to work on practical solutions to socioeconomic challenges. That interest carried into research, career counseling, and youth civic action.\n\n## Looking forward\n\nI aspire to work as a capability building consultant and growth strategist. I want to help organizations understand what their teams and communities need, then design learning and leadership programs that respond to those needs.",
   philosophy:
     "Growth is rarely accidental. When individuals gain clarity on their strengths—and organizations invest in structured systems, evidence-based research, and inclusive leadership—potential turns into lasting socioeconomic impact.\n\nI believe in combining human-centered mentorship with analytical rigor and AI-assisted learning tools so capability building remains accessible, practical, and transformative.",
   beyond:
     "Outside academic and consulting projects, I invest my energy in youth civic initiatives such as the Rights Baithak Social Action Project and GenZ Walk, mentoring scholarship applicants, and participating in design-thinking and leadership networks across Pakistan.",
   professional_bio: "",
   media_kit: "",
-  statistics:
-    "500+|Individuals reached via Rights Baithak\n196|Research participants surveyed\n70+|Students taught & mentored\n30+|Students receiving career guidance",
+  statistics: impactFigures.map(({ value, label }) => value + "|" + label).join("\n"),
   speaking_topics:
     "Capability building for emerging leaders and organizations\nYouth entrepreneurship & SDG-aligned problem solving\nCareer readiness, RIASEC/MBTI frameworks & scholarship mentorship\nWomen’s digital inclusion & work readiness facilitation\nEvidence-based impact evaluation for social programs",
   speaking_types:
@@ -85,15 +81,14 @@ export const defaults = {
   facebook: "",
   youtube: "",
   other_social: "",
-  newsletter_title: "Dispatches on capability, strategy & growth.",
+  newsletter_title: "Field notes on growth.",
   newsletter_description:
-    "Receive upcoming professional insights, articles, personal reflections, and workshop announcements directly in your inbox.",
-  nav_order: "Home,About,Courses,Reflections,Gallery,Speaking,Contact",
+    "Get new essays, research reflections, and workshop announcements by email.",
+  nav_order: "Home,About,Experience,Social Impact,Courses,Insights,Contact",
   show_gallery: "1",
   show_speaking: "1",
   show_resources: "1",
   show_testimonials: "1",
-  show_demo: "0",
 };
 
 export type Settings = typeof defaults;

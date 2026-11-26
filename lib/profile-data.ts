@@ -7,7 +7,7 @@ export interface ProfileOrganization extends Row {
   url: string;
   role: string;
   period: string;
-  kind: "partner" | "program" | "corporate" | "community";
+  kind: "program" | "corporate" | "community";
   visible: number;
   position: number;
 }
@@ -112,9 +112,9 @@ export const profileOrganizations: ProfileOrganization[] = [
     image: "/images/orgs/seed-ventures.webp",
     alt: "SEED Ventures logo",
     url: "",
-    role: "Enterprise Challenge Pakistan Co-host",
+    role: "Program co-organizer · ECP apprentice",
     period: "2023 – 2024",
-    kind: "partner",
+    kind: "program",
     visible: 1,
     position: 5,
   },
@@ -150,7 +150,7 @@ export const profileOrganizations: ProfileOrganization[] = [
     url: "",
     role: "Market Researcher",
     period: "Jan 2026 – Jul 2026",
-    kind: "partner",
+    kind: "community",
     visible: 1,
     position: 8,
   },
@@ -202,6 +202,18 @@ export const profileOrganizations: ProfileOrganization[] = [
     visible: 1,
     position: 12,
   },
+  {
+    id: 13,
+    title: "Special Olympics Pakistan",
+    image: "",
+    alt: "",
+    url: "",
+    role: "Community involvement",
+    period: "",
+    kind: "community",
+    visible: 1,
+    position: 13,
+  },
 ];
 
 export const profileQualifications: ProfileQualification[] = [
@@ -245,6 +257,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "experience",
     body: "Helping students gain greater clarity and direction regarding their educational and professional pathways by aligning career choices with interests, strengths, and personality traits.\n\n- Guided 30+ students in exploring their career paths through personalized one-on-one counseling sessions.\n- Prepared 15+ students for TCF Tertiary Scholarship interviews through mentorship, interview guidance, and targeted feedback.\n- Connected students with senior mentors for domain-specific sessions, particularly in Computer Science.\n- Contributing to a structured career counseling framework for students from underprivileged backgrounds integrating the RIASEC model and MBTI personality assessment.",
     impact: "30+ students counseled one-on-one · 15+ TCF Tertiary Scholarship candidates mentored",
+    skills: "Career counseling\nInterview preparation\nMentor coordination",
     url: "",
     visible: 1,
     position: 1,
@@ -259,6 +272,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "experience",
     body: "Designed and executed a comprehensive impact assessment for the DPSF Entrepreneurship Training Program.\n\n- Built a structured survey instrument and collected primary quantitative data from 196 program participants.\n- Managed participant outreach and communication to ensure high response quality.\n- Analyzed quantitative outcomes to evaluate program efficacy and authored a formal report with evidence-based recommendations.",
     impact: "196 research participants surveyed · Full quantitative impact evaluation report delivered",
+    skills: "Survey design\nQuantitative analysis\nReport writing",
     url: "",
     visible: 1,
     position: 2,
@@ -273,6 +287,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "fellowship",
     body: "Selected from a highly competitive nationwide applicant pool across Pakistan (~13% acceptance rate) for an intensive Career Readiness Fellowship.\n\n- Engaged with mentors and industry professionals from McKinsey & Company, IBA, International Trade Centre (ITC), State Bank of Pakistan, and London Strategy Centre.\n- Completed the Design Your Zindagi (DYZ) Workshop, conducted in collaboration with Stanford University and IBA, applying design thinking to career exploration and problem-solving.\n- Strengthened personal strategy, executive communication, LinkedIn positioning, and presentation skills alongside a nationwide peer network.",
     impact: "Top ~13% nationwide selection · Design Your Zindagi (Stanford & IBA) participant",
+    skills: "Design thinking\nExecutive communication\nPresentation",
     url: "",
     visible: 1,
     position: 3,
@@ -287,6 +302,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "fellowship",
     body: "Selected at the national level among 150+ delegates across Pakistan to participate in the Young Leaders Conference (YLC), demonstrating initiative by approaching sponsors and raising funds to support participation.\n\n- Co-designed and implemented the Rights Baithak Project, a Social Action Project raising awareness about civic rights and the responsibilities of active citizenship.\n- Delivered awareness sessions in schools on students' rights and responsibilities.\n- Supported the GenZ Walk initiative alongside the Hammad Foundation to champion human rights and civic engagement.",
     impact: "500+ individuals reached through Rights Baithak · National cohort of 150+ young leaders",
+    skills: "Community outreach\nFacilitation\nProject planning",
     url: "",
     visible: 1,
     position: 4,
@@ -301,6 +317,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "volunteering",
     body: "Led community digital inclusion, work readiness, and women's economic empowerment initiatives across Karachi.\n\n- Managed the WRP (Work Readiness Program) Training Cohort in Karachi (26–30 May 2025) as CIRCLE Ambassador.\n- Facilitated 5+ Circle Baji awareness and onboarding sessions at organizations including Salma Ghar and RLCC, Aga Khan.\n- Conducted two onboarding sessions at the Disabled People's Welfare Organization, onboarding 30+ participants onto the Circle Baji platform.\n- Represented CIRCLE Women Association at PSTD and partner events.\n- Facilitated Work Readiness training sessions in collaboration with Faysal Bank and Digital Literacy sessions in partnership with Aga Khan (May – Oct 2025).",
     impact: "5+ community sessions facilitated · 30+ participants onboarded at DPWO · WRP Karachi cohort managed",
+    skills: "Digital-literacy facilitation\nCohort coordination\nCommunity outreach",
     url: "https://circlewomen.org",
     visible: 1,
     position: 5,
@@ -315,6 +332,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "experience",
     body: "Joined as an Intern during second semester (May – July 2025) and progressed into a part-time Assistant Coordinator role during third semester (August – December 2025).\n\n- Coordinated end-to-end event operations, vendor logistics, and on-ground execution.\n- Managed internal and external stakeholder, partner, and sponsor communications via correspondence and calls.\n- Drafted and managed formal documentation including Memorandums of Understanding (MoUs), proposals, and sponsorship letters.",
     impact: "8 months startup operations · MoUs, sponsorship proposals & stakeholder coordination",
+    skills: "Event operations\nVendor logistics\nStakeholder communication",
     url: "",
     visible: 1,
     position: 6,
@@ -329,6 +347,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "experience",
     body: "Completed corporate internship during the first semester of university, gaining hands-on exposure to B2B market research and customer engagement in the construction materials sector.\n\n- Analyzed market needs and purchasing preferences of construction firms across varied project environments.\n- Promoted HD Putty products, supporting brand visibility and direct client outreach.",
     impact: "B2B construction market analysis · Brand outreach for HD Putty line",
+    skills: "B2B market research\nClient outreach",
     url: "",
     visible: 1,
     position: 7,
@@ -343,6 +362,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "experience",
     body: "Completed directly after higher secondary studies at TCF College.\n\n- Supported daily organizational operations and administrative workflows.\n- Handled stakeholder outreach through cold calls, email correspondence with investors, and visitor coordination.",
     impact: "Early exposure to investor correspondence and organizational operations",
+    skills: "Operations support\nStakeholder outreach",
     url: "",
     visible: 1,
     position: 8,
@@ -357,6 +377,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "fellowship",
     body: "Selected among 220+ applicants (top 9% selection rate) for Pakistan's premier youth entrepreneurship apprenticeship organized by Prince's Trust International and SEED Ventures.\n\n- Cultivated an entrepreneurial mindset through hands-on venture exercises and practical problem-solving.\n- Identified real socioeconomic challenges and designed sustainable solutions aligned with the UN Sustainable Development Goals (SDGs).",
     impact: "Top 9% selection rate among 220+ applicants · SDG-aligned venture design",
+    skills: "Venture design\nProblem framing",
     url: "",
     visible: 1,
     position: 9,
@@ -371,6 +392,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "fellowship",
     body: "Selected as a mentee in Manzl's structured mentorship program, completing the English Communication Curriculum for Cohort 10.\n\n- Participated in mentoring sessions, reflective learning, and practical workshops focused on leadership, executive communication, career planning, and professional growth.",
     impact: "Completed Manzl Cohort 10 English Communication & Mentorship Curriculum",
+    skills: "Professional communication\nCareer planning",
     url: "",
     visible: 1,
     position: 10,
@@ -385,6 +407,7 @@ export const profileExperiences: ProfileExperience[] = [
     kind: "volunteering",
     body: "Played a pivotal role in The Citizens Foundation's outreach campaign by creating awareness of educational opportunities and inspiring students to pursue higher education and scholarships.",
     impact: "Expanded educational opportunity awareness among TCF students",
+    skills: "Student outreach\nEducation awareness",
     url: "https://www.tcf.org.pk",
     visible: 1,
     position: 11,
@@ -544,12 +567,15 @@ export const profileMilestones: ProfileMilestone[] = [
 export const profileGalleryCertificates: Row[] = profileAchievements
   .filter((a) => !!a.image)
   .map((a) => ({
-    id: a.id,
+    id: -a.id,
     title: a.title,
     category: a.category,
+    issuer: a.issuer,
+    date_label: a.date_label,
     image: a.image,
+    thumbnail: a.image.replace("/certificates/", "/certificates/previews/"),
     alt: a.alt,
-    body: [a.issuer, a.date_label, a.signatory ? `Signed by ${a.signatory}` : "", a.body].filter(Boolean).join(" · "),
+    body: a.body,
     video: "",
     visible: 1,
     position: a.position,
@@ -567,24 +593,5 @@ export const coreCompetencies = [
   {
     group: "Operations & Partnerships",
     items: ["Stakeholder Engagement", "MoUs, Proposals & Sponsorships", "Event Operations & Logistics", "Community Mobilization", "Networking"],
-  },
-];
-
-export const focusPillars = [
-  {
-    title: "Capability Building & Consulting",
-    description: "Designing structured frameworks that help individuals and emerging organizations bridge the gap between current capacity and long-term potential.",
-  },
-  {
-    title: "Entrepreneurship & Growth Strategy",
-    description: "Combining market research, SDG-aligned venture thinking, and practical problem-solving to unlock sustainable socioeconomic value.",
-  },
-  {
-    title: "Youth Leadership & Education",
-    description: "Empowering students through career counseling (RIASEC & MBTI), scholarship mentorship, work readiness, and civic action initiatives.",
-  },
-  {
-    title: "AI-Enabled Learning & Digital Inclusion",
-    description: "Exploring how modern technology and AI-driven approaches accelerate accessible skill development across underserved communities.",
   },
 ];

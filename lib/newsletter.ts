@@ -44,6 +44,7 @@ async function send(row: Row, subject: string, message: string, requestId: strin
 }
 
 export async function subscribe(name: string, email: string, resource: string) {
+  if (!deliveryConfigured()) throw new InputError("Newsletter sign-ups are temporarily unavailable.", 503);
   const source = resource ? "resource:" + resource : "newsletter";
   const subsCol = await col<Row>("newsletter_subscribers");
   let row = await findOne("newsletter_subscribers", { email });
@@ -82,7 +83,6 @@ export async function subscribe(name: string, email: string, resource: string) {
     if (!renewed) return "Check your inbox for the link to continue.";
     row = renewed as Row;
   }
-  if (!deliveryConfigured()) return "Your request was saved. Email confirmation is currently unavailable.";
   const stamp = now();
   const cutoff = new Date(Date.now() - 60000).toISOString();
   const reserved = await subsCol.findOneAndUpdate(
@@ -104,7 +104,7 @@ export async function subscribe(name: string, email: string, resource: string) {
   );
   if (!sent) {
     await subsCol.updateOne({ id: row.id, sent_at: stamp }, { $set: { sent_at: null } });
-    return "Your request was saved. The confirmation email could not be sent. Try again shortly.";
+    throw new InputError("Your request was saved. The confirmation email could not be sent. Try again shortly.", 503);
   }
   return "Check your inbox for the link to continue.";
 }

@@ -1,6 +1,6 @@
 import { findMany } from "@/db";
 import { item, settings } from "@/lib/content";
-import { openCourse, whatsapp } from "@/lib/domain";
+import { inquiryTypes, openCourse, whatsapp } from "@/lib/domain";
 import { track } from "@/lib/security";
 
 function redirect(location: string) {
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     (chosen?.price || course.price || "Please confirm") +
     "\n\nPlease share the registration process, payment details, and further information.\n\nThank you.";
   const link = whatsapp(site.whatsapp, message);
-  if (!link) return redirect("/contact?category=Course%20registration");
+  if (!link) return redirect("/contact?" + new URLSearchParams({ category: inquiryTypes[0], subject: String(course.title ?? "") }));
   await track(request, "whatsapp_click", "/courses/" + slug).catch(() => undefined);
   return redirect(link);
 }

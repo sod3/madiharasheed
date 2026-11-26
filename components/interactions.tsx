@@ -1,107 +1,14 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Menu,
   MessageCircle,
-  Minimize2,
   ThumbsUp,
-  X,
-  ZoomIn,
-  ZoomOut,
 } from "lucide-react";
 import type { Row } from "@/db";
-import { categories, date, href, stars, text } from "@/lib/domain";
-
-export function Brand({ title }: { title: string }) {
-  return (
-    <Link href="/" className="brand">
-      <span className="brand-mark" aria-hidden="true">MR</span>
-      {title}
-    </Link>
-  );
-}
-
-export function Header({
-  title,
-  links,
-  current,
-}: {
-  title: string;
-  links: { label: string; href: string }[];
-  current: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const button = useRef<HTMLButtonElement>(null);
-  const menu = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    menu.current?.querySelector("a")?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        button.current?.focus();
-      }
-    };
-    const onResize = () => {
-      if (window.innerWidth > 880) setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onResize);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [open]);
-
-  const navigation = links.map((link) => (
-    <a
-      key={link.href}
-      href={link.href}
-      aria-current={link.href === current ? "page" : undefined}
-      onClick={() => setOpen(false)}
-    >
-      {link.label}
-    </a>
-  ));
-
-  return (
-    <header className="header">
-      <div className="shell header-row">
-        <Brand title={title} />
-        <nav className="desktop-nav" aria-label="Main navigation">
-          {navigation}
-        </nav>
-        <Link href="/contact" className="button small header-contact">
-          Get in Touch
-        </Link>
-        <button
-          ref={button}
-          type="button"
-          className="icon menu"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          aria-controls="mobile-navigation"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X /> : <Menu />}
-        </button>
-      </div>
-      <div className="mobile-nav" id="mobile-navigation" hidden={!open} ref={menu}>
-        <nav aria-label="Mobile navigation">{navigation}</nav>
-        <Link href="/contact" className="button" onClick={() => setOpen(false)}>
-          Get in Touch
-        </Link>
-      </div>
-    </header>
-  );
-}
+import { date, stars, text } from "@/lib/domain";
 
 export function AsyncForm({
   endpoint,
@@ -131,8 +38,8 @@ export function AsyncForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(Object.fromEntries(new FormData(form))),
       });
-      const body = (await result.json()) as { message: string };
-      setStatus({ message: body.message, ok: result.ok });
+      const body = (await result.json()) as { message?: string };
+      setStatus({ message: body.message || "The request could not be completed. Try again.", ok: result.ok && !!body.message });
       if (result.ok && reset) form.reset();
     } catch {
       setStatus({ message: "The request could not be sent. Try again.", ok: false });
@@ -142,7 +49,7 @@ export function AsyncForm({
   }
 
   return (
-    <form className="form" method="post" action={endpoint} onSubmit={submit}>
+    <form className="form" method="post" action={endpoint} onSubmit={submit} aria-busy={busy}>
       {children}
       <label className="sr" aria-hidden="true">
         Leave empty
@@ -186,212 +93,6 @@ export function SubscribeFields({ resource = "" }: { resource?: string }) {
           I agree to receive updates and newsletters. I can unsubscribe at any time. <Link href="/privacy">Privacy policy</Link>
         </span>
       </label>
-    </>
-  );
-}
-
-export function Gallery({
-  items,
-  filterable = false,
-}: {
-  items: Row[];
-  filterable?: boolean;
-}) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const trigger = useRef<HTMLButtonElement | null>(null);
-  const [activeCategory, setActiveCategory] = useState("");
-  const [index, setIndex] = useState(0);
-  const [zoomed, setZoomed] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
-
-  const cats = filterable ? categories(items) : [];
-  const filtered = activeCategory ? items.filter((item) => text(item, "category") === activeCategory) : items;
-
-  useEffect(() => {
-    const onFullscreenChange = () => {
-      if (!document.fullscreenElement) setFullscreen(false);
-    };
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
-
-  if (!items.length) return null;
-
-  const safeIndex = filtered.length ? Math.min(index, filtered.length - 1) : 0;
-  const current = filtered[safeIndex];
-
-  const step = (direction: number) => {
-    if (!filtered.length) return;
-    setZoomed(false);
-    setIndex((i) => (i + direction + filtered.length) % filtered.length);
-  };
-
-  async function toggleFullscreen() {
-    const el = dialog.current;
-    if (!el) return;
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-        setFullscreen(false);
-      } else if (el.requestFullscreen) {
-        await el.requestFullscreen();
-        setFullscreen(true);
-      } else {
-        setFullscreen((prev) => !prev);
-      }
-    } catch {
-      setFullscreen((prev) => !prev);
-    }
-  }
-
-  function closeModal() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => undefined);
-    }
-    setZoomed(false);
-    setFullscreen(false);
-    dialog.current?.close();
-  }
-
-  return (
-    <>
-      {filterable && cats.length > 1 && (
-        <div className="categories" role="group" aria-label="Filter certificates by category">
-          {["", ...cats].map((cat) => (
-            <button
-              key={cat || "all"}
-              type="button"
-              aria-pressed={activeCategory === cat}
-              onClick={() => {
-                setActiveCategory(cat);
-                setIndex(0);
-              }}
-            >
-              {cat || "All"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="cert-grid">
-        {filtered.map((item, idx) => (
-          <figure className="cert-card" key={item.id}>
-            <button
-              className="cert-thumb"
-              aria-label={`View ${text(item, "title")} full screen`}
-              type="button"
-              onClick={(event) => {
-                trigger.current = event.currentTarget;
-                setIndex(idx);
-                setZoomed(false);
-                dialog.current?.showModal();
-              }}
-            >
-              {href(item.image) ? (
-                <img src={href(item.image)} alt={text(item, "alt") || text(item, "title")} loading="lazy" decoding="async" />
-              ) : (
-                <span className="placeholder">Play video</span>
-              )}
-              <span className="cert-zoom-chip" aria-hidden="true">
-                <Maximize2 size={12} /> Full screen
-              </span>
-            </button>
-            <figcaption className="cert-caption">
-              <p className="eyebrow">
-                {[text(item, "category"), text(item, "date_label")].filter(Boolean).join(" · ") || "Verified Record"}
-              </p>
-              <h3>{item.title}</h3>
-              {item.issuer && <p className="meta">{item.issuer}</p>}
-              {item.body && <p>{item.body}</p>}
-            </figcaption>
-          </figure>
-        ))}
-      </div>
-
-      {current && (
-        <dialog
-          ref={dialog}
-          className="lightbox-dialog"
-          data-fullscreen={fullscreen ? "true" : "false"}
-          data-zoom={zoomed ? "true" : "false"}
-          aria-label={text(current, "title")}
-          onClose={() => {
-            setZoomed(false);
-            setFullscreen(false);
-            trigger.current?.focus();
-          }}
-          onClick={(event) => {
-            if (event.target === dialog.current) closeModal();
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowLeft") step(-1);
-            if (event.key === "ArrowRight") step(1);
-          }}
-        >
-          <div className="lightbox-toolbar">
-            {!current.video && (
-              <button
-                className="icon"
-                type="button"
-                aria-label={zoomed ? "Reset zoom" : "Zoom in"}
-                onClick={() => setZoomed((z) => !z)}
-              >
-                {zoomed ? <ZoomOut size={18} /> : <ZoomIn size={18} />}
-              </button>
-            )}
-            <button
-              className="icon"
-              type="button"
-              aria-label={fullscreen ? "Exit full screen" : "Enter full screen"}
-              onClick={toggleFullscreen}
-            >
-              {fullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-            </button>
-            <button className="icon" aria-label="Close viewer" type="button" onClick={closeModal}>
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className="lightbox-stage">
-            {current.video ? (
-              <video
-                key={text(current, "video")}
-                controls
-                playsInline
-                preload="metadata"
-                src={href(current.video)}
-                poster={href(current.image)}
-              />
-            ) : (
-              <img src={href(current.image)} alt={text(current, "alt") || text(current, "title")} />
-            )}
-          </div>
-
-          <div className="lightbox-caption">
-            <div>
-              <strong>{current.title}</strong>
-              <p>
-                {[text(current, "issuer"), text(current, "date_label"), text(current, "body")]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            </div>
-            {filtered.length > 1 && (
-              <div className="actions">
-                <button type="button" className="text-link" onClick={() => step(-1)}>
-                  <ChevronLeft size={16} /> Previous
-                </button>
-                <span className="meta" style={{ color: "#d8c8ec" }}>
-                  {safeIndex + 1} / {filtered.length}
-                </span>
-                <button type="button" className="text-link" onClick={() => step(1)}>
-                  Next <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
-          </div>
-        </dialog>
-      )}
     </>
   );
 }
@@ -698,25 +399,35 @@ export function Reviews({
 }
 
 export function ReadTools({ url, title }: { url: string; title: string }) {
-  const [position, setPosition] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const progress = useRef<HTMLSpanElement>(null);
+  const [copyStatus, setCopyStatus] = useState("");
 
   useEffect(() => {
+    const article = document.getElementById("reading-body");
+    let frame = 0;
     const update = () => {
-      const node = document.getElementById("reading-body");
-      if (!node) return;
-      const rect = node.getBoundingClientRect();
-      setPosition(Math.min(1, Math.max(0, (innerHeight / 3 - rect.top) / Math.max(1, rect.height - innerHeight / 3))));
+      frame = 0;
+      if (!article || !progress.current) return;
+      const { top, height } = article.getBoundingClientRect();
+      const viewport = window.innerHeight;
+      const position = Math.min(1, Math.max(0, (viewport * .35 - top) / Math.max(1, height - viewport * .25)));
+      progress.current.style.transform = "scaleX(" + position + ")";
     };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, []);
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    schedule();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [url]);
 
   return (
     <>
       <div className="progress" aria-hidden="true">
-        <span style={{ transform: "scaleX(" + position + ")" }} />
+        <span ref={progress} style={{ transform: "scaleX(0)" }} />
       </div>
       <div className="actions share">
         <button
@@ -725,90 +436,20 @@ export function ReadTools({ url, title }: { url: string; title: string }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(url);
-              setCopied(true);
+              setCopyStatus("Link copied.");
             } catch {
-              setCopied(false);
+              setCopyStatus("The link could not be copied.");
             }
           }}
         >
-          {copied ? "Link copied" : "Copy link"}
+          Copy link
         </button>
+        <a className="text-link" target="_blank" rel="noreferrer" href={"https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(url)}>Share on LinkedIn</a>
         <a className="text-link" target="_blank" rel="noreferrer" href={"https://wa.me/?text=" + encodeURIComponent(title + " " + url)}>
           Share on WhatsApp
         </a>
+        {copyStatus && <span role="status" className="meta">{copyStatus}</span>}
       </div>
     </>
-  );
-}
-
-export function Metrics({ id }: { id: string }) {
-  useEffect(() => {
-    fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: location.pathname }),
-      keepalive: true,
-    }).catch(() => undefined);
-    const params = new URLSearchParams(location.search);
-    if (!/^G-[A-Z0-9]+$/.test(id) || ["invite", "preview", "t"].some((key) => params.has(key))) return;
-    try {
-      if (localStorage.getItem("writing-room-analytics") !== "yes") return;
-    } catch {
-      return;
-    }
-    const global = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
-    global.dataLayer ??= [];
-    global.gtag = function (...args: unknown[]) {
-      global.dataLayer?.push(args);
-    };
-    global.gtag("js", new Date());
-    global.gtag("config", id, { page_location: location.origin + location.pathname, allow_google_signals: false });
-    const script = document.createElement("script");
-    script.src = "https://www.googletagmanager.com/gtag/js?id=" + id;
-    script.async = true;
-    script.referrerPolicy = "no-referrer";
-    document.head.appendChild(script);
-    return () => {
-      script.remove();
-    };
-  }, [id]);
-  return null;
-}
-
-const analyticsListeners = new Set<() => void>();
-function subscribeAnalytics(callback: () => void) {
-  analyticsListeners.add(callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    analyticsListeners.delete(callback);
-    window.removeEventListener("storage", callback);
-  };
-}
-function readAnalyticsSnapshot() {
-  try {
-    return localStorage.getItem("writing-room-analytics") === "yes";
-  } catch {
-    return false;
-  }
-}
-
-export function PrivacyPreference() {
-  const allowed = useSyncExternalStore(subscribeAnalytics, readAnalyticsSnapshot, () => false);
-  return (
-    <label className="check">
-      <input
-        type="checkbox"
-        checked={allowed}
-        onChange={(event) => {
-          try {
-            localStorage.setItem("writing-room-analytics", event.target.checked ? "yes" : "no");
-          } catch {
-            // ignore storage restrictions
-          }
-          analyticsListeners.forEach((cb) => cb());
-        }}
-      />
-      Allow optional Google Analytics on this browser
-    </label>
   );
 }

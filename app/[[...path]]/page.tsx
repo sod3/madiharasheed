@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import { notFound, unstable_rethrow } from "next/navigation";
 import { absolute, item, origin, settings, type Catalogue } from "@/lib/content";
 import { defaults, href, q, text, type Query } from "@/lib/domain";
-import { admin } from "@/lib/security";
+import { admin, publicFormsConfigured } from "@/lib/security";
 import { Footer } from "@/components/editorial";
-import { Header, Metrics } from "@/components/interactions";
+import { Metrics } from "@/components/site-metrics";
+import { Header } from "@/components/navigation";
+import { Home } from "@/components/home";
+import { About, Experience, SocialImpact } from "@/components/profile";
+import { PresentationEffects } from "@/components/presentation-effects";
 import {
-  About,
   ArticleDetail,
   CataloguePage,
   Connect,
   CourseDetail,
   GalleryPage,
-  Home,
   NewsletterPage,
   Privacy,
   Publication,
@@ -24,25 +26,27 @@ export const dynamic = "force-dynamic";
 const links = [
   ["Home", ""],
   ["About", "about"],
+  ["Experience", "experience"],
+  ["Social Impact", "social-impact"],
   ["Courses", "courses"],
   ["Insights", "reflections"],
-  ["Gallery", "gallery"],
-  ["Speaking", "speaking"],
   ["Contact", "contact"],
 ] as const;
 
 const descriptions: Record<string, [string, string]> = {
   "": [
     "",
-    "BBA student and aspiring Capability Building Consultant & Growth Strategist advancing entrepreneurship, leadership, education, and socioeconomic development in Pakistan.",
+    "Madiha Rasheed’s work in capability building, leadership, entrepreneurship, and education in Karachi, Pakistan.",
   ],
   about: [
     "About",
-    "Education, professional experience, volunteering, fellowships, organizations, and verified certificates of Madiha Rasheed.",
+    "Follow Madiha Rasheed’s journey from education and community work to capability building, research, and strategy.",
   ],
+  experience: ["Experience", "Explore Madiha Rasheed’s research, facilitation, career guidance, and professional roles in Karachi."],
+  "social-impact": ["Social Impact", "Explore Madiha Rasheed’s community work in civic education, youth development, women’s digital inclusion, and access to learning."],
   courses: [
     "Courses & Workshops",
-    "Capability building courses, work readiness workshops, and structured learning programs led by Madiha Rasheed.",
+    "Explore learning and workshop updates in capability building, career readiness, and digital inclusion from Madiha Rasheed.",
   ],
   reflections: [
     "Insights & Reflections",
@@ -113,13 +117,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const [label, summary] = descriptions[page];
     const name = row ? text(row, "seo_title") || text(row, "title") : label;
     const title =
-      site.site_title + (name ? " | " + name : " | Capability Building Consultant & Growth Strategist");
+      name ? name + " | " + site.site_title : site.site_title + " | Capability Building & Social Impact";
     const description = row ? text(row, "seo_description") || text(row, "summary") || summary : summary;
     const url = absolute("/" + page + (slug ? "/" + slug : ""));
-    const rawImage = href(row?.image) || href(site.hero_image) || "/images/certificates/capstone-program-tcp.webp";
+    const rawImage = href(row?.image) || "/images/social-preview.jpg";
     const image = absolute(rawImage);
-    const index =
-      !row?.demo && !preview && !q(query, "invite") && page !== "newsletter" && process.env.PRIVATE_PREVIEW !== "1";
+    const index = !row?.demo && !preview && !q(query, "invite") && !q(query, "q") &&
+      !q(query, "category") && !q(query, "availability") && page !== "newsletter" && process.env.PRIVATE_PREVIEW !== "1";
 
     return {
       title,
@@ -133,7 +137,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         description,
         url,
         siteName: site.site_title,
-        images: [image],
+        images: [{ url: image, alt: row?.image ? text(row, "alt") || text(row, "title") : "Madiha Rasheed · Capability building and social impact", ...(row?.image ? {} : { width: 1200, height: 630 }) }],
       },
       twitter: {
         card: "summary_large_image",
@@ -149,18 +153,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function Page(props: Props) {
-  const { page, row, query, site, preview } = await resolve(props);
+  const { page, slug, row, query, site, preview } = await resolve(props);
+  const path = "/" + page;
+  const route = path + (slug ? "/" + slug : "");
+  const analytics = process.env.GA_ID || "";
+  const recordVisits = publicFormsConfigured();
   const order = site.nav_order
     .toLowerCase()
     .split(",")
-    .map((value) => value.trim());
-  const nav = links
-    .filter(([, path]) => (path !== "gallery" || site.show_gallery === "1") && (path !== "speaking" || site.show_speaking === "1"))
-    .map(([label, path]) => ({ label, href: "/" + path }));
-  nav.sort(
-    (a, b) =>
-      (order.indexOf(a.label.toLowerCase()) + 1 || 100) - (order.indexOf(b.label.toLowerCase()) + 1 || 100),
-  );
+    .map((value) => value.trim() === "reflections" ? "insights" : value.trim());
+  const nav = links.map(([label, segment]) => ({ label, href: "/" + segment }));
+  if (order.includes("experience") && order.includes("social impact")) {
+    nav.sort((a, b) => (order.indexOf(a.label.toLowerCase()) + 1 || 100) - (order.indexOf(b.label.toLowerCase()) + 1 || 100));
+  }
 
   let content: React.ReactNode;
   switch (page) {
@@ -169,6 +174,12 @@ export default async function Page(props: Props) {
       break;
     case "about":
       content = <About site={site} />;
+      break;
+    case "experience":
+      content = <Experience />;
+      break;
+    case "social-impact":
+      content = <SocialImpact />;
       break;
     case "courses":
       content = row ? (
@@ -213,10 +224,11 @@ export default async function Page(props: Props) {
 
   return (
     <>
-      <Header title={site.site_title} links={nav} current={"/" + page} />
-      <main id="main">{content}</main>
+      <Header title={site.site_title} links={nav} current={path} />
+      <main id="main" className="site-main" tabIndex={-1} key={route}>{content}</main>
       <Footer site={site} />
-      <Metrics id={process.env.GA_ID ?? ""} />
+      <PresentationEffects route={route} />
+      {(analytics || recordVisits) && <Metrics id={analytics} path={route} record={recordVisits} />}
     </>
   );
 }

@@ -1,11 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="mr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4C1D95"/>
-      <stop offset="100%" stop-color="#241042"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="url(#mr-grad)"/>
-  <rect x="4" y="4" width="56" height="56" rx="10" fill="none" stroke="#DCCBEB" stroke-opacity="0.35" stroke-width="1.2"/>
-  <text x="32" y="40" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, 'Times New Roman', serif" font-size="25" font-weight="600" letter-spacing="-1">MR</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <rect width="36" height="36" rx="4" fill="#241530"/>
+  <g transform="translate(3 3)" fill="none" stroke="#f4e9ff" stroke-width="1.35">
+    <path d="M5 21 9.3 8l5.7 10 5.7-10L25 21M5 24h20"/>
+    <path d="M9.3 8h2.8l5.7 10" opacity=".55"/>
+  </g>
 </svg>

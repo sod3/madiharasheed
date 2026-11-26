@@ -1,12 +1,18 @@
 import Link from "next/link";
-import { BookOpen, Clock, MonitorPlay, Mail, ChevronRight, ChevronDown, MessageCircle, Search } from "lucide-react";
+import { ArrowUp, BookOpen, Clock, MonitorPlay, ChevronRight, ChevronDown, Search } from "lucide-react";
 import type { Row } from "@/db";
 import { date, href, inquiryTypes, readings, text, whatsapp, type Settings } from "@/lib/domain";
-import { AsyncForm, Brand, SubscribeFields } from "./interactions";
+import { deliveryConfigured } from "@/lib/newsletter";
+import { publicFormsConfigured } from "@/lib/security";
+import { AsyncForm, SubscribeFields } from "./interactions";
+import { LineArt } from "./line-art";
+import { Brand } from "./navigation";
 
 export function Photo({ src, alt = "", hero = false }: { src?: unknown; alt?: string; hero?: boolean }) {
   const url = href(src);
   return url ? (
+    // CMS images may use arbitrary approved hosts. Fixed-ratio layouts reserve space for the source.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={url}
       alt={alt}
@@ -26,11 +32,11 @@ export function Photo({ src, alt = "", hero = false }: { src?: unknown; alt?: st
 export function Breadcrumb({ title, parent }: { title: string; parent?: { label: string; path: string } }) {
   return (
     <nav className="breadcrumb" aria-label="Breadcrumb">
-      <Link href="/">Home</Link>
+      <Link prefetch={false} href="/">Home</Link>
       <ChevronRight size={14} aria-hidden="true" />
       {parent && (
         <>
-          <Link href={parent.path}>{parent.label}</Link>
+          <Link prefetch={false} href={parent.path}>{parent.label}</Link>
           <ChevronRight size={14} aria-hidden="true" />
         </>
       )}
@@ -43,18 +49,25 @@ export function Heading({
   title,
   description,
   children,
+  motif,
 }: {
   title: string;
   description: string;
   children?: React.ReactNode;
+  motif?: Parameters<typeof LineArt>[0]["motif"];
 }) {
   return (
     <section className="page-heading">
       <div className="shell">
         <Breadcrumb title={title} />
-        <h1>{title}</h1>
-        <p className="lead">{description}</p>
-        {children}
+        <div className="page-heading-layout">
+          <div>
+            <h1>{title}</h1>
+            <p className="lead">{description}</p>
+            {children}
+          </div>
+          {motif && <div className="page-heading-art"><LineArt motif={motif} /></div>}
+        </div>
       </div>
     </section>
   );
@@ -88,25 +101,39 @@ export function Empty({ title, children }: { title: string; children: React.Reac
   return (
     <div className="empty">
       <BookOpen size={25} strokeWidth={1.4} aria-hidden="true" />
-      <h3>{title}</h3>
+      <h2>{title}</h2>
       <p>{children}</p>
     </div>
   );
 }
 
-export function Copy({ source }: { source: unknown }) {
+function paragraphs(source: unknown) {
+  return String(source ?? "").trim().split(/\r?\n\s*\r?\n/).filter(Boolean);
+}
+
+export function ReadingContents({ source }: { source: unknown }) {
+  const sections = paragraphs(source).flatMap((part, index) =>
+    part.startsWith("## ") ? [{ id: "article-section-" + index, title: part.trim().split(/\r?\n/)[0].slice(3) }] : [],
+  );
+  if (sections.length < 2 || String(source).trim().split(/\s+/).length < 650) return null;
+  return (
+    <nav aria-label="In this article" className="reading-section-nav">
+      <strong>In this article</strong>
+      <ol>{sections.map(({ id, title }) => <li key={id}><a href={"#" + id}>{title}</a></li>)}</ol>
+    </nav>
+  );
+}
+
+export function Copy({ source, article = false }: { source: unknown; article?: boolean }) {
   return (
     <div className="prose">
-      {String(source ?? "")
-        .trim()
-        .split(/\r?\n\s*\r?\n/)
-        .filter(Boolean)
+      {paragraphs(source)
         .map((part, index) => {
           const lines = part.trim().split(/\r?\n/);
           if (lines[0].startsWith("## ")) {
             return (
               <div key={index}>
-                <h3>{lines[0].slice(3)}</h3>
+                {article ? <h2 id={"article-section-" + index}>{lines[0].slice(3)}</h2> : <h3>{lines[0].slice(3)}</h3>}
                 {lines.length > 1 && <p>{lines.slice(1).join("\n")}</p>}
               </div>
             );
@@ -149,7 +176,7 @@ export function CourseCard({ row }: { row: Row }) {
   return (
     <article className="course-card">
       <a href={path} className="card-image" tabIndex={-1} aria-hidden="true">
-        <Photo src={row.image} alt={text(row, "alt")} />
+        {href(row.image) ? <Photo src={row.image} alt={text(row, "alt")} /> : <div className="cover-art"><LineArt motif="contours" /></div>}
       </a>
       <div className="card-body">
         <p className="eyebrow">{row.category || "Course & Workshop"}</p>
@@ -197,7 +224,7 @@ export function JournalCard({ row, compact = false }: { row: Row; compact?: bool
   return (
     <article className={"journal-card" + (compact ? " compact" : "")}>
       <a href={path} className="card-image" tabIndex={-1} aria-hidden="true">
-        <Photo src={row.image} alt={text(row, "alt")} />
+        {href(row.image) ? <Photo src={row.image} alt={text(row, "alt")} /> : <div className="cover-art"><LineArt motif="pages" /></div>}
       </a>
       <div className="journal-copy">
         <p className="eyebrow">{row.category || "Insights & Reflections"}</p>
@@ -295,19 +322,25 @@ export function CategoryLinks({ path, active, values }: { path: string; active: 
 }
 
 export function Newsletter({ site }: { site: Settings }) {
+  const available = publicFormsConfigured() && deliveryConfigured();
   return (
     <section className="newsletter" id="newsletter">
       <div className="shell newsletter-grid">
         <div>
-          <span className="mail">
-            <Mail size={21} strokeWidth={1.5} />
-          </span>
+          <p className="eyebrow section-kicker">Newsletter</p>
           <h2>{site.newsletter_title}</h2>
           <p>{site.newsletter_description}</p>
         </div>
-        <AsyncForm endpoint="/api/subscribe" label="Subscribe">
-          <SubscribeFields />
-        </AsyncForm>
+        {available ? (
+          <AsyncForm endpoint="/api/subscribe" label="Subscribe">
+            <SubscribeFields />
+          </AsyncForm>
+        ) : (
+          <div className="newsletter-fallback">
+            <p>Newsletter sign-ups are currently unavailable.</p>
+            {href(site.linkedin) && <a className="text-link" href={href(site.linkedin)} target="_blank" rel="noreferrer">Follow Madiha on LinkedIn</a>}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -379,46 +412,41 @@ export function Social({ site }: { site: Settings }) {
 export function Footer({ site }: { site: Settings }) {
   const whats = whatsapp(site.whatsapp, "Assalamualaikum Madiha, I would like to connect regarding a collaboration.");
   return (
-    <>
-      <footer className="footer">
-        <div className="shell">
-          <div className="footer-grid">
-            <div>
-              <Brand title={site.site_title} />
-              <p>
-                {site.author_name || "Madiha Rasheed"} · Aspiring Capability Building Consultant & Growth Strategist · Karachi, Pakistan.
-              </p>
-              <Social site={site} />
-            </div>
-            <nav aria-label="Explore">
-              <strong>Explore</strong>
-              <Link href="/about">About &amp; Journey</Link>
-              <Link href="/courses">Courses &amp; Workshops</Link>
-              <Link href="/reflections">Insights &amp; Reflections</Link>
-              <Link href="/publications">Publications</Link>
-            </nav>
-            <nav aria-label="Connect">
-              <strong>Connect</strong>
-              <Link href="/contact">Contact</Link>
-              {site.show_speaking === "1" && <Link href="/speaking">Speaking &amp; Collaboration</Link>}
-              {site.show_resources === "1" && <Link href="/resources">Resources</Link>}
-              {site.show_gallery === "1" && <Link href="/gallery">Certificates &amp; Gallery</Link>}
-            </nav>
+    <footer className="footer">
+      <div className="shell">
+        <div className="footer-grid">
+          <div>
+            <Brand title={site.site_title} />
+            <p>Capability building, leadership, and social impact. Based in Karachi, Pakistan.</p>
+            {site.email && <a href={"mailto:" + site.email}>{site.email}</a>}
+            <Social site={site} />
           </div>
-          <div className="footer-end">
-            <span>
-              © {new Date().getUTCFullYear()} {site.site_title}
-            </span>
-            <Link href="/privacy">Privacy policy</Link>
-            <Link href="/admin">Editor sign-in</Link>
-          </div>
+          <nav aria-label="Explore">
+            <strong>Explore</strong>
+            <Link prefetch={false} href="/about">About</Link>
+            <Link prefetch={false} href="/experience">Experience</Link>
+            <Link prefetch={false} href="/social-impact">Social impact</Link>
+            {site.show_gallery === "1" && <Link prefetch={false} href="/gallery">Certificates</Link>}
+            {site.show_speaking === "1" && <Link prefetch={false} href="/speaking">Speaking</Link>}
+          </nav>
+          <nav aria-label="Learn and connect">
+            <strong>Learn &amp; connect</strong>
+            <Link prefetch={false} href="/courses">Courses &amp; workshops</Link>
+            <Link prefetch={false} href="/reflections">Insights</Link>
+            <Link prefetch={false} href="/publications">Publications</Link>
+            {site.show_resources === "1" && <Link prefetch={false} href="/resources">Resources</Link>}
+            <Link prefetch={false} href="/newsletter">Newsletter</Link>
+            <Link prefetch={false} href="/contact">Contact</Link>
+            {whats && <a href={whats} rel="noreferrer" target="_blank">WhatsApp</a>}
+          </nav>
         </div>
-      </footer>
-      {whats && (
-        <a className="float" href={whats} rel="noreferrer" target="_blank" aria-label="Connect on WhatsApp">
-          <MessageCircle size={24} />
-        </a>
-      )}
-    </>
+        <div className="footer-end">
+          <span>© {new Date().getUTCFullYear()} {site.site_title}</span>
+          <Link prefetch={false} href="/privacy">Privacy policy</Link>
+          <Link prefetch={false} href="/admin">Editor sign-in</Link>
+          <a href="#top">Back to top <ArrowUp size={14} aria-hidden="true" /></a>
+        </div>
+      </div>
+    </footer>
   );
 }

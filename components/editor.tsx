@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 import {useId,useState} from "react";
 import {ChevronDown,Upload} from "lucide-react";
 import type {Row} from "@/db";
@@ -31,6 +32,7 @@ function UploadField({field,value,restricted,onPending}:{field:Field;value:strin
     {field.help&&<small>{field.help}</small>}{status&&<small className={status.ok?"status":"error"} role="status">{status.message}</small>}</div>;
 }
 export function Editor({module,fields,record={},choices={}}:{module:string;fields:Field[];record?:Values;choices?:Record<string,Row[]>}){
+  const router=useRouter();
   const settings=module==="settings",path="/admin/"+module;
   const [status,setStatus]=useState<Result|null>(null),[busy,setBusy]=useState(false),[uploads,setUploads]=useState(0),[deleteOpen,setDeleteOpen]=useState(false);
   const [course,setCourse]=useState(String(record.course_id??"")),[slug,setSlug]=useState(String(record.slug??""));
@@ -42,8 +44,9 @@ export function Editor({module,fields,record={},choices={}}:{module:string;field
       const result=await send(action,data);
       setStatus(result);
       if(result.ok&&!settings){
-        if(action==="delete")location.assign(path);
-        else if(result.id)location.assign(path+"?edit="+result.id+"&saved=1");
+        if(action==="delete")router.push(path);
+        else if(result.id)router.push(path+"?edit="+result.id+"&saved=1");
+        router.refresh();
       }
     }finally{setBusy(false);}
   }
@@ -114,6 +117,7 @@ export function AdminLogin({requiresEmail}:{requiresEmail:boolean}){
   </form>;
 }
 export function AdminSignOut(){
+  const router=useRouter();
   const [busy,setBusy]=useState(false);
-  return <button type="button" className="text-link" disabled={busy} onClick={async()=>{setBusy(true);try{await send("logout",{});location.assign("/admin");}finally{setBusy(false);}}}>{busy?"Signing out…":"Sign out"}</button>;
+  return <button type="button" className="text-link" disabled={busy} onClick={async()=>{setBusy(true);try{const result=await send("logout",{});if(result.ok){router.replace("/admin");router.refresh();}}finally{setBusy(false);}}}>{busy?"Signing out…":"Sign out"}</button>;
 }
